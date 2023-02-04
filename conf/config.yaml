@@ -1,0 +1,23 @@
+Gorm:
+  Mysql:
+    Dsn: root:314159.com@tcp(127.0.0.1:3306)/loveshop?charset=utf8mb4&parseTime=True&loc=Local
+  Pool:
+    MaxIdle: 10
+    MaxOpen: 100
+    MaxLifeTime: 3600
+
+Cache:
+  Redis:
+    Addr: localhost:6379
+    Password: 
+    DB: 0
+    PoolSize: 20
+    DialTimeout: 500
+
+Jwt:
+  Issuer: Riicarus
+  Expire: 3600
+  Secret: riicarus_token
+
+Server:
+  Port: 10000
