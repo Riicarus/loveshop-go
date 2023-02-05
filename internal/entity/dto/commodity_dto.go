@@ -22,7 +22,7 @@ type CommodityUpdateParam struct {
 	Extension util.JSONMap `json:"extension"`
 }
 
-type CommoditySimpleInfo struct {
+type CommoditySimpleView struct {
 	Id        string       `json:"id"`
 	Type      string       `json:"type"`
 	Numbering string       `json:"numbering"`
@@ -32,7 +32,7 @@ type CommoditySimpleInfo struct {
 	Extension util.JSONMap `json:"extension"`
 }
 
-type CommodityDetailInfo struct {
+type CommodityDetailView struct {
 	Id        string       `json:"id"`
 	Type      string       `json:"type"`
 	Numbering string       `json:"numbering"`

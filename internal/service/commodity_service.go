@@ -26,8 +26,8 @@ func NewCommodityService(svcctx *context.ServiceContext) *CommodityService {
 	}
 }
 
-func (s *CommodityService) CastToSimpleInfo(commodity *model.Commodity) *dto.CommoditySimpleInfo {
-	return &dto.CommoditySimpleInfo{
+func (s *CommodityService) CastToSimpleView(commodity *model.Commodity) *dto.CommoditySimpleView {
+	return &dto.CommoditySimpleView{
 		Id:        commodity.Id,
 		Type:      commodity.Type,
 		Numbering: commodity.Numbering,
@@ -38,10 +38,10 @@ func (s *CommodityService) CastToSimpleInfo(commodity *model.Commodity) *dto.Com
 	}
 }
 
-func (s *CommodityService) CastToSimpleInfoSlice(commoditySlice []*model.Commodity) []*dto.CommoditySimpleInfo {
-	infoSlice := make([]*dto.CommoditySimpleInfo, 0, len(commoditySlice))
+func (s *CommodityService) CastToSimpleViewSlice(commoditySlice []*model.Commodity) []*dto.CommoditySimpleView {
+	simpleViewSlice := make([]*dto.CommoditySimpleView, 0, len(commoditySlice))
 	for _, c := range commoditySlice {
-		infoSlice = append(infoSlice, &dto.CommoditySimpleInfo{
+		simpleViewSlice = append(simpleViewSlice, &dto.CommoditySimpleView{
 			Id:        c.Id,
 			Type:      c.Type,
 			Numbering: c.Numbering,
@@ -52,11 +52,11 @@ func (s *CommodityService) CastToSimpleInfoSlice(commoditySlice []*model.Commodi
 		})
 	}
 
-	return infoSlice
+	return simpleViewSlice
 }
 
-func (s *CommodityService) CastToDetailInfo(commodity *model.Commodity) *dto.CommodityDetailInfo {
-	return &dto.CommodityDetailInfo{
+func (s *CommodityService) CastToDetailView(commodity *model.Commodity) *dto.CommodityDetailView {
+	return &dto.CommodityDetailView{
 		Id:        commodity.Id,
 		Type:      commodity.Type,
 		Numbering: commodity.Numbering,
@@ -168,7 +168,7 @@ func (s *CommodityService) Undelete(ctx *gin.Context, id string) error {
 	return nil
 }
 
-func (s *CommodityService) FindDetailById(ctx *gin.Context, id string) (*dto.CommodityDetailInfo, error) {
+func (s *CommodityService) FindDetailViewById(ctx *gin.Context, id string) (*dto.CommodityDetailView, error) {
 	commodity := &model.Commodity{}
 	var err error
 
@@ -201,10 +201,10 @@ func (s *CommodityService) FindDetailById(ctx *gin.Context, id string) (*dto.Com
 		}()
 	}
 
-	return s.CastToDetailInfo(commodity), nil
+	return s.CastToDetailView(commodity), nil
 }
 
-func (s *CommodityService) FindDetailByIsbn(ctx *gin.Context, isbn string) (*dto.CommodityDetailInfo, error) {
+func (s *CommodityService) FindDetailViewByIsbn(ctx *gin.Context, isbn string) (*dto.CommodityDetailView, error) {
 	commodity := &model.Commodity{}
 	var err error
 
@@ -244,13 +244,13 @@ func (s *CommodityService) FindDetailByIsbn(ctx *gin.Context, isbn string) (*dto
 		}()
 	}
 
-	return s.CastToDetailInfo(commodity), nil
+	return s.CastToDetailView(commodity), nil
 }
 
 // TODO add redis cache
 // use elasticsearch to store data, sort through it and get ids of target commodities
 // then use the id to get from redis
-func (s *CommodityService) FindInfoPage(ctx *gin.Context, page *util.Page[*dto.CommoditySimpleInfo]) error {
+func (s *CommodityService) FindSimpleViewPage(ctx *gin.Context, page *util.Page[*dto.CommoditySimpleView]) error {
 	// sort through es
 
 	// get cache from redis
@@ -258,51 +258,51 @@ func (s *CommodityService) FindInfoPage(ctx *gin.Context, page *util.Page[*dto.C
 	// if redis not cached, get from db
 	commoditySlice, err := s.svcctx.CommodityModel.FindPage(page.Num, page.Size)
 	if err != nil {
-		fmt.Println("CommodityService.FindInfoPage(), database err: ", err)
+		fmt.Println("CommodityService.FindSimpleViewPage(), database err: ", err)
 		return err
 	}
 
-	infoSlice := s.CastToSimpleInfoSlice(commoditySlice)
-	page.Data = infoSlice
+	simpleViewSlice := s.CastToSimpleViewSlice(commoditySlice)
+	page.Data = simpleViewSlice
 
 	return nil
 }
 
-func (s *CommodityService) FindInfoPageByType(ctx *gin.Context, t string, page *util.Page[*dto.CommoditySimpleInfo]) error {
+func (s *CommodityService) FindSimpleViewPageByType(ctx *gin.Context, t string, page *util.Page[*dto.CommoditySimpleView]) error {
 	commoditySlice, err := s.svcctx.CommodityModel.FindPageByType(t, page.Num, page.Size)
 	if err != nil {
-		fmt.Println("CommodityService.FindInfoPageByType(), database err: ", err)
+		fmt.Println("CommodityService.FindSimpleViewPageByType(), database err: ", err)
 		return err
 	}
 
-	infoSlice := s.CastToSimpleInfoSlice(commoditySlice)
-	page.Data = infoSlice
+	simpleViewSlice := s.CastToSimpleViewSlice(commoditySlice)
+	page.Data = simpleViewSlice
 
 	return nil
 }
 
-func (s *CommodityService) FindInfoPageByFuzzyName(ctx *gin.Context, name string, page *util.Page[*dto.CommoditySimpleInfo]) error {
+func (s *CommodityService) FindSimpleViewPageByFuzzyName(ctx *gin.Context, name string, page *util.Page[*dto.CommoditySimpleView]) error {
 	commoditySlice, err := s.svcctx.CommodityModel.FindPageByFuzzyName(name, page.Num, page.Size)
 	if err != nil {
-		fmt.Println("CommodityService.FindInfoPageByFuzzyName(), database err: ", err)
+		fmt.Println("CommodityService.FindSimpleViewPageByFuzzyName(), database err: ", err)
 		return err
 	}
 
-	infoSlice := s.CastToSimpleInfoSlice(commoditySlice)
-	page.Data = infoSlice
+	simpleViewSlice := s.CastToSimpleViewSlice(commoditySlice)
+	page.Data = simpleViewSlice
 
 	return nil
 }
 
-func (s *CommodityService) FindInfoPageByFuzzyNameAndType(ctx *gin.Context, name string, t string, page *util.Page[*dto.CommoditySimpleInfo]) error {
+func (s *CommodityService) FindSimpleViewPageByFuzzyNameAndType(ctx *gin.Context, name string, t string, page *util.Page[*dto.CommoditySimpleView]) error {
 	commoditySlice, err := s.svcctx.CommodityModel.FindPageByFuzzyNameAndType(name, t, page.Num, page.Size)
 	if err != nil {
-		fmt.Println("CommodityService.FindInfoPageByFuzzyNameAndType(), database err: ", err)
+		fmt.Println("CommodityService.FindSimpleViewPageByFuzzyNameAndType(), database err: ", err)
 		return err
 	}
 
-	infoSlice := s.CastToSimpleInfoSlice(commoditySlice)
-	page.Data = infoSlice
+	simpleViewSlice := s.CastToSimpleViewSlice(commoditySlice)
+	page.Data = simpleViewSlice
 
 	return nil
 }

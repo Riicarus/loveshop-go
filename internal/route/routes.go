@@ -24,12 +24,12 @@ func RegisterHandlers(router *gin.Engine, svcctx *context.ServiceContext) {
 		commodityGroupV1.DELETE("/:id", handler.CommodityDelete(svcctx))
 		commodityGroupV1.PUT("/active/:id", handler.CommodityUndelete(svcctx))
 
-		commodityGroupV1.GET("/info/detail/:id", handler.CommodityFindDetailInfoById(svcctx))
-		commodityGroupV1.GET("/info/detail/isbn/:isbn", handler.CommodityFindDetailInfoByIsbn(svcctx))
+		commodityGroupV1.GET("/view/detail/:id", handler.CommodityFindDetailViewById(svcctx))
+		commodityGroupV1.GET("/view/detail/isbn/:isbn", handler.CommodityFindDetailViewByIsbn(svcctx))
 		
-		commodityGroupV1.GET("/info/:num/:size", handler.CommodityFindInfoPage(svcctx))
-		commodityGroupV1.GET("/info/type/:type/:num/:size", handler.CommodityFindInfoPageByType(svcctx))
-		commodityGroupV1.GET("/info/name/:name/:num/:size", handler.CommodityFindInfoPageByFuzzyName(svcctx))
-		commodityGroupV1.GET("/info/name/:name/type/:type/:num/:size", handler.CommodityFindInfoPageByFuzzyNameAndType(svcctx))
+		commodityGroupV1.GET("/view/simple/:num/:size", handler.CommodityFindSimpleViewPage(svcctx))
+		commodityGroupV1.GET("/view/simple/type/:type/:num/:size", handler.CommodityFindSimpleViewPageByType(svcctx))
+		commodityGroupV1.GET("/view/simple/name/:name/:num/:size", handler.CommodityFindSimpleViewPageByFuzzyName(svcctx))
+		commodityGroupV1.GET("/view/simple/name/:name/type/:type/:num/:size", handler.CommodityFindSimpleViewPageByFuzzyNameAndType(svcctx))
 	}
 }
