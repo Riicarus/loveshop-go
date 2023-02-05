@@ -42,7 +42,7 @@ func CommodityUpdate(svcctx *context.ServiceContext) gin.HandlerFunc {
 			ctx.JSON(http.StatusOK, resp.Fail[string](e.VALIDATE_ERR.Msg, e.VALIDATE_ERR.Code))
 			return
 		}
-		
+
 		commodityService := service.NewCommodityService(svcctx)
 		err2 := commodityService.Update(ctx, updateParam)
 		if err2 != nil {
@@ -100,6 +100,35 @@ func CommodityUndelete(svcctx *context.ServiceContext) gin.HandlerFunc {
 	}
 }
 
+func CommodityFindDetailInfoById(svcctx *context.ServiceContext) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		id := ctx.Param("id")
+
+		commoditySerivce := service.NewCommodityService(svcctx)
+		detailInfo, err := commoditySerivce.FindDetailById(ctx, id)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.INTERNAL_ERROR_MSG, e.INTERNAL_ERROR_CODE))
+		} else {
+			ctx.JSON(http.StatusOK, resp.OK(detailInfo))
+		}
+	}
+}
+
+func CommodityFindDetailInfoByIsbn(svcctx *context.ServiceContext) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		isbn := ctx.Param("isbn")
+		// TODO use regex to check whether isbn is right-formatted
+
+		commoditySerivce := service.NewCommodityService(svcctx)
+		detailInfo, err := commoditySerivce.FindDetailByIsbn(ctx, isbn)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.INTERNAL_ERROR_MSG, e.INTERNAL_ERROR_CODE))
+		} else {
+			ctx.JSON(http.StatusOK, resp.OK(detailInfo))
+		}
+	}
+}
+
 func CommodityFindInfoPage(svcctx *context.ServiceContext) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		num, err1 := strconv.Atoi(ctx.Param("num"))
@@ -121,16 +150,69 @@ func CommodityFindInfoPage(svcctx *context.ServiceContext) gin.HandlerFunc {
 	}
 }
 
-func CommodityFindDetailInfo(svcctx *context.ServiceContext) gin.HandlerFunc {
+func CommodityFindInfoPageByType(svcctx *context.ServiceContext) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		id := ctx.Param("id")
+		t := ctx.Param("type")
+		num, err1 := strconv.Atoi(ctx.Param("num"))
+		size, err2 := strconv.Atoi(ctx.Param("size"))
+		if err1 != nil || err2 != nil {
+			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.VALIDATE_FAILED_MSG, e.VALIDATE_FAILED_CODE))
+			return
+		}
 
-		commoditySerivce := service.NewCommodityService(svcctx)
-		detailInfo, err := commoditySerivce.FindDetailById(ctx, id)
+		page := util.NewPage[*dto.CommoditySimpleInfo](num, size)
+
+		commodityService := service.NewCommodityService(svcctx)
+		err := commodityService.FindInfoPageByType(ctx, t, page)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.INTERNAL_ERROR_MSG, e.INTERNAL_ERROR_CODE))
 		} else {
-			ctx.JSON(http.StatusOK, resp.OK(detailInfo))
+			ctx.JSON(http.StatusOK, resp.OK(page))
+		}
+	}
+}
+
+func CommodityFindInfoPageByFuzzyName(svcctx *context.ServiceContext) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		name := ctx.Param("name")
+		num, err1 := strconv.Atoi(ctx.Param("num"))
+		size, err2 := strconv.Atoi(ctx.Param("size"))
+		if err1 != nil || err2 != nil {
+			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.VALIDATE_FAILED_MSG, e.VALIDATE_FAILED_CODE))
+			return
+		}
+
+		page := util.NewPage[*dto.CommoditySimpleInfo](num, size)
+
+		commodityService := service.NewCommodityService(svcctx)
+		err := commodityService.FindInfoPageByFuzzyName(ctx, name, page)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.INTERNAL_ERROR_MSG, e.INTERNAL_ERROR_CODE))
+		} else {
+			ctx.JSON(http.StatusOK, resp.OK(page))
+		}
+	}
+}
+
+func CommodityFindInfoPageByFuzzyNameAndType(svcctx *context.ServiceContext) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		name := ctx.Param("name")
+		t := ctx.Param("type")
+		num, err1 := strconv.Atoi(ctx.Param("num"))
+		size, err2 := strconv.Atoi(ctx.Param("size"))
+		if err1 != nil || err2 != nil {
+			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.VALIDATE_FAILED_MSG, e.VALIDATE_FAILED_CODE))
+			return
+		}
+
+		page := util.NewPage[*dto.CommoditySimpleInfo](num, size)
+
+		commodityService := service.NewCommodityService(svcctx)
+		err := commodityService.FindInfoPageByFuzzyNameAndType(ctx, name, t, page)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.INTERNAL_ERROR_MSG, e.INTERNAL_ERROR_CODE))
+		} else {
+			ctx.JSON(http.StatusOK, resp.OK(page))
 		}
 	}
 }

@@ -24,7 +24,12 @@ func RegisterHandlers(router *gin.Engine, svcctx *context.ServiceContext) {
 		commodityGroupV1.DELETE("/:id", handler.CommodityDelete(svcctx))
 		commodityGroupV1.PUT("/active/:id", handler.CommodityUndelete(svcctx))
 
+		commodityGroupV1.GET("/info/detail/:id", handler.CommodityFindDetailInfoById(svcctx))
+		commodityGroupV1.GET("/info/detail/isbn/:isbn", handler.CommodityFindDetailInfoByIsbn(svcctx))
+		
 		commodityGroupV1.GET("/info/:num/:size", handler.CommodityFindInfoPage(svcctx))
-		commodityGroupV1.GET("/info/detail/:id", handler.CommodityFindDetailInfo(svcctx))
+		commodityGroupV1.GET("/info/type/:type/:num/:size", handler.CommodityFindInfoPageByType(svcctx))
+		commodityGroupV1.GET("/info/name/:name/:num/:size", handler.CommodityFindInfoPageByFuzzyName(svcctx))
+		commodityGroupV1.GET("/info/name/:name/type/:type/:num/:size", handler.CommodityFindInfoPageByFuzzyNameAndType(svcctx))
 	}
 }

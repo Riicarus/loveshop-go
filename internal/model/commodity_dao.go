@@ -1,8 +1,6 @@
 package model
 
 import (
-	"fmt"
-
 	"github.com/google/uuid"
 	"github.com/riicarus/loveshop/internal/entity/dto"
 	"github.com/riicarus/loveshop/internal/sql"
@@ -14,14 +12,14 @@ type DefaultCommodityModel struct{}
 
 func (m *DefaultCommodityModel) Add(param *dto.CommodityAddParam) error {
 	commodity := &Commodity{
-		Id: uuid.New().String(),
-		Type: param.Type,
+		Id:        uuid.New().String(),
+		Type:      param.Type,
 		Numbering: param.Numbering,
-		Name: param.Name,
-		Amount: param.Amount,
-		Price: param.Price,
+		Name:      param.Name,
+		Amount:    param.Amount,
+		Price:     param.Price,
 		Extension: param.Extension,
-		Deleted: false,
+		Deleted:   false,
 	}
 	err := connection.SqlConn.Create(commodity).Error
 	if err != nil {
@@ -33,11 +31,11 @@ func (m *DefaultCommodityModel) Add(param *dto.CommodityAddParam) error {
 
 func (m *DefaultCommodityModel) Update(param *dto.CommodityUpdateParam) error {
 	commodity := &Commodity{
-		Id: param.Id,
+		Id:        param.Id,
 		Numbering: param.Numbering,
-		Name: param.Name,
-		Type: param.Type,
-		Price: param.Price,
+		Name:      param.Name,
+		Type:      param.Type,
+		Price:     param.Price,
 		Extension: param.Extension,
 	}
 
@@ -71,7 +69,7 @@ func (m *DefaultCommodityModel) Delete(id string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -83,7 +81,7 @@ func (m *DefaultCommodityModel) Undelete(id string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -97,9 +95,19 @@ func (m *DefaultCommodityModel) FindById(id string) (*Commodity, error) {
 	return commodity, nil
 }
 
-func (m *DefaultCommodityModel) FindInfoPage(num, size int) ([]*Commodity, error) {
-	commoditySlice := make([]*Commodity, 0)
-	err := connection.SqlConn.Raw(sql.CommodityFindInfoPage, num, size).Scan(&commoditySlice).Error
+func (m *DefaultCommodityModel) FindByIsbn(isbn string) (*Commodity, error) {
+	commodity := &Commodity{}
+	err := connection.SqlConn.Raw(sql.CommodityFindDetailByIsbn, isbn).Scan(commodity).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return commodity, nil
+}
+
+func (m *DefaultCommodityModel) FindPage(num, size int) ([]*Commodity, error) {
+	commoditySlice := make([]*Commodity, 0, size)
+	err := connection.SqlConn.Raw(sql.CommodityFindPage, num, size).Scan(&commoditySlice).Error
 	if err != nil {
 		return nil, err
 	}
@@ -107,25 +115,32 @@ func (m *DefaultCommodityModel) FindInfoPage(num, size int) ([]*Commodity, error
 	return commoditySlice, nil
 }
 
-func (m *DefaultCommodityModel) FindDetailById(id string) (*dto.CommodityDetailInfo, error) {
-	c, err := m.FindById(id)
+func (m *DefaultCommodityModel) FindPageByType(t string, num, size int) ([]*Commodity, error) {
+	commoditySlice := make([]*Commodity, 0, size)
+	err := connection.SqlConn.Raw(sql.CommodityFindPageByType, t, num, size).Scan(&commoditySlice).Error
 	if err != nil {
-		fmt.Println("DefaultCommodityModel.FindDetailById err: ", err)
 		return nil, err
 	}
 
-	if c == nil {
-		return nil, nil
+	return commoditySlice, nil
+}
+
+func (m *DefaultCommodityModel) FindPageByFuzzyName(name string, num, size int) ([]*Commodity, error) {
+	commoditySlice := make([]*Commodity, 0, size)
+	err := connection.SqlConn.Raw(sql.CommodityFindPageByFuzzyName, name, num, size).Scan(&commoditySlice).Error
+	if err != nil {
+		return nil, err
 	}
 
-	return &dto.CommodityDetailInfo{
-		Id:        c.Id,
-		Type:      c.Type,
-		Numbering: c.Numbering,
-		Name:      c.Name,
-		Amount:    c.Amount,
-		Price:     c.Price,
-		Extension: c.Extension,
-		Deleted:   c.Deleted,
-	}, nil
+	return commoditySlice, nil
+}
+
+func (m *DefaultCommodityModel) FindPageByFuzzyNameAndType(name, t string, num, size int) ([]*Commodity, error) {
+	commoditySlice := make([]*Commodity, 0, size)
+	err := connection.SqlConn.Raw(sql.CommodityFindPageByFuzzyNameAndType, t, name, num, size).Scan(&commoditySlice).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return commoditySlice, nil
 }

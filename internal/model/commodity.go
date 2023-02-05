@@ -29,8 +29,11 @@ type CommodityModel interface {
 	Delete(id string) error
 	Undelete(id string) error
 
-
 	FindById(id string) (*Commodity, error)
-	FindInfoPage(num, size int) ([]*Commodity, error)
-	FindDetailById(id string) (*dto.CommodityDetailInfo, error)
+	FindByIsbn(isbn string) (*Commodity, error)
+
+	FindPage(num, size int) ([]*Commodity, error)
+	FindPageByType(t string, num, size int) ([]*Commodity, error)
+	FindPageByFuzzyName(name string, num, size int) ([]*Commodity, error)
+	FindPageByFuzzyNameAndType(name, t string, num, size int) ([]*Commodity, error)
 }
