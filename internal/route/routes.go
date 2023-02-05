@@ -32,4 +32,9 @@ func RegisterHandlers(router *gin.Engine, svcctx *context.ServiceContext) {
 		commodityGroupV1.GET("/view/simple/name/:name/:num/:size", handler.CommodityFindSimpleViewPageByFuzzyName(svcctx))
 		commodityGroupV1.GET("/view/simple/name/:name/type/:type/:num/:size", handler.CommodityFindSimpleViewPageByFuzzyNameAndType(svcctx))
 	}
+
+	orderGroupV1 := router.Group("/api/order/v1")
+	{
+		orderGroupV1.POST("", handler.OrderAdd(svcctx))
+	}
 }
