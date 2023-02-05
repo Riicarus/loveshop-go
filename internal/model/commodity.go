@@ -1,7 +1,6 @@
 package model
 
 import (
-	"github.com/riicarus/loveshop/internal/entity/dto"
 	"github.com/riicarus/loveshop/pkg/util"
 )
 
@@ -21,9 +20,9 @@ func (Commodity) TableName() string {
 }
 
 type CommodityModel interface {
-	Add(param *dto.CommodityAddParam) error
+	Add(commoidty *Commodity) error
 
-	Update(param *dto.CommodityUpdateParam) error
+	Update(commodity *Commodity) error
 	UpdateAmount(id string, number int) error
 
 	Delete(id string) error

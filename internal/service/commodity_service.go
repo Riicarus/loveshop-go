@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	"github.com/riicarus/loveshop/internal/constant"
 	"github.com/riicarus/loveshop/internal/context"
@@ -70,7 +71,17 @@ func (s *CommodityService) CastToDetailView(commodity *model.Commodity) *dto.Com
 
 func (s *CommodityService) Add(ctx *gin.Context, param *dto.CommodityAddParam) error {
 	// TODO check param
-	err := s.svcctx.CommodityModel.Add(param)
+	commodity := &model.Commodity{
+		Id:        uuid.New().String(),
+		Type:      param.Type,
+		Numbering: param.Numbering,
+		Name:      param.Name,
+		Amount:    param.Amount,
+		Price:     param.Price,
+		Extension: param.Extension,
+		Deleted:   false,
+	}
+	err := s.svcctx.CommodityModel.Add(commodity)
 	if err != nil {
 		fmt.Println("CommodityService.Add(), database err: ", err)
 		return err
@@ -85,7 +96,15 @@ func (s *CommodityService) Update(ctx *gin.Context, param *dto.CommodityUpdatePa
 		return e.UNAUTHED_ERR
 	}
 
-	err := s.svcctx.CommodityModel.Update(param)
+	commodity := &model.Commodity{
+		Id:        param.Id,
+		Numbering: param.Numbering,
+		Name:      param.Name,
+		Type:      param.Type,
+		Price:     param.Price,
+		Extension: param.Extension,
+	}
+	err := s.svcctx.CommodityModel.Update(commodity)
 	if err != nil {
 		fmt.Println("CommodityService.Update(), database err: ", err)
 		return err

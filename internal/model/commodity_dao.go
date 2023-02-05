@@ -1,8 +1,6 @@
 package model
 
 import (
-	"github.com/google/uuid"
-	"github.com/riicarus/loveshop/internal/entity/dto"
 	"github.com/riicarus/loveshop/internal/sql"
 	"github.com/riicarus/loveshop/pkg/connection"
 	"gorm.io/gorm"
@@ -10,17 +8,7 @@ import (
 
 type DefaultCommodityModel struct{}
 
-func (m *DefaultCommodityModel) Add(param *dto.CommodityAddParam) error {
-	commodity := &Commodity{
-		Id:        uuid.New().String(),
-		Type:      param.Type,
-		Numbering: param.Numbering,
-		Name:      param.Name,
-		Amount:    param.Amount,
-		Price:     param.Price,
-		Extension: param.Extension,
-		Deleted:   false,
-	}
+func (m *DefaultCommodityModel) Add(commodity *Commodity) error {
 	err := connection.SqlConn.Create(commodity).Error
 	if err != nil {
 		return err
@@ -29,16 +17,7 @@ func (m *DefaultCommodityModel) Add(param *dto.CommodityAddParam) error {
 	return nil
 }
 
-func (m *DefaultCommodityModel) Update(param *dto.CommodityUpdateParam) error {
-	commodity := &Commodity{
-		Id:        param.Id,
-		Numbering: param.Numbering,
-		Name:      param.Name,
-		Type:      param.Type,
-		Price:     param.Price,
-		Extension: param.Extension,
-	}
-
+func (m *DefaultCommodityModel) Update(commodity *Commodity) error {
 	// the sturct in Updates() must be the database mapping model
 	err := connection.SqlConn.Model(commodity).Updates(commodity).Error
 	if err != nil {
