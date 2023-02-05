@@ -29,3 +29,45 @@ func OrderAdd(svcctx *context.ServiceContext) gin.HandlerFunc {
 		}
 	}
 }
+
+func OrderCancle(svcctx *context.ServiceContext) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		id := ctx.Param("id")
+
+		orderService := service.NewOrderService(svcctx)
+		err := orderService.CancleOrder(ctx, id)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.INTERNAL_ERROR_MSG, e.INTERNAL_ERROR_CODE))
+		} else {
+			ctx.JSON(http.StatusOK, resp.OK(""))
+		}
+	}
+}
+
+func OrderPay(svcctx *context.ServiceContext) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		id := ctx.Param("id")
+
+		orderService := service.NewOrderService(svcctx)
+		err := orderService.PayOrder(ctx, id)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.INTERNAL_ERROR_MSG, e.INTERNAL_ERROR_CODE))
+		} else {
+			ctx.JSON(http.StatusOK, resp.OK(""))
+		}
+	}
+}
+
+func OrderFinish(svcctx *context.ServiceContext) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		id := ctx.Param("id")
+
+		orderService := service.NewOrderService(svcctx)
+		err := orderService.FinishOrder(ctx, id)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.INTERNAL_ERROR_MSG, e.INTERNAL_ERROR_CODE))
+		} else {
+			ctx.JSON(http.StatusOK, resp.OK(""))
+		}
+	}
+}

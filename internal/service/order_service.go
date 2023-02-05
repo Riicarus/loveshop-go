@@ -24,6 +24,7 @@ func NewOrderService(svcctx *context.ServiceContext) *OrderService {
 	}
 }
 
+// use transaction to protect
 func (s *OrderService) Add(ctx *gin.Context, param *dto.OrderAddParam) error {
 	if strings.TrimSpace(param.AdminId) == "" && strings.TrimSpace(param.UserId) == "" {
 		return e.VALIDATE_ERR
@@ -58,6 +59,8 @@ func (s *OrderService) Add(ctx *gin.Context, param *dto.OrderAddParam) error {
 		Type: param.Type,
 	}
 
+	ctx.Set("tx", true)
+
 	err := s.svcctx.OrderModel.Add(order)
 	if err != nil {
 		fmt.Println("OrderService.Add(), database err: ", err)
@@ -69,3 +72,32 @@ func (s *OrderService) Add(ctx *gin.Context, param *dto.OrderAddParam) error {
 	return nil
 }
 
+func (s *OrderService) CancleOrder(ctx *gin.Context, id string) error {
+	err := s.svcctx.OrderModel.CancleOrder(id)
+	if err != nil {
+		fmt.Println("OrderService.CancleOrder(), database err: ", err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *OrderService) PayOrder(ctx *gin.Context, id string) error {
+	err := s.svcctx.OrderModel.PayOrder(id)
+	if err != nil {
+		fmt.Println("OrderService.PayOrder(), database err: ", err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *OrderService) FinishOrder(ctx *gin.Context, id string) error {
+	err := s.svcctx.OrderModel.FinishOrder(id)
+	if err != nil {
+		fmt.Println("OrderService.FinishOrder(), database err: ", err)
+		return err
+	}
+
+	return nil
+}

@@ -36,5 +36,9 @@ func RegisterHandlers(router *gin.Engine, svcctx *context.ServiceContext) {
 	orderGroupV1 := router.Group("/api/order/v1")
 	{
 		orderGroupV1.POST("", handler.OrderAdd(svcctx))
+
+		orderGroupV1.PUT("/cancle/:id", handler.OrderCancle(svcctx))
+		orderGroupV1.PUT("/pay/:id", handler.OrderPay(svcctx))
+		orderGroupV1.PUT("/finish/:id", handler.OrderFinish(svcctx))
 	}
 }
