@@ -1,7 +1,20 @@
 package sql
 
-var CommodityFindDetailByIsbn = "SELECT * FROM commodity WHERE extension->>'$.ISBN' = ?"
-var CommodityFindPage = "SELECT c.id, c.name, c.type, c.numbering, c.amount, c.price, c.extension FROM commodity AS c INNER JOIN (SELECT id FROM commodity LIMIT ?, ?) AS i ON i.`id` = c.`id`"
-var CommodityFindPageByType = "SELECT c.id, c.name, c.type, c.numbering, c.amount, c.price, c.extension FROM commodity AS c INNER JOIN (SELECT id FROM commodity WHERE `type` = ? LIMIT ?, ?) AS i ON i.`id` = c.`id`"
-var CommodityFindPageByFuzzyName = "SELECT c.id, c.name, c.type, c.numbering, c.amount, c.price, c.extension FROM commodity AS c INNER JOIN (SELECT id FROM commodity WHERE `name` like CONCAT('%', ?, '%') LIMIT ?, ?) AS i ON i.`id` = c.`id`"
-var CommodityFindPageByFuzzyNameAndType = "SELECT c.id, c.name, c.type, c.numbering, c.amount, c.price, c.extension FROM commodity AS c INNER JOIN (SELECT id FROM commodity WHERE `type` = ? AND `name` like CONCAT('%', ?, '%') LIMIT ?, ?) AS i ON i.`id` = c.`id`"
+var (
+	CommodityFindDetailByIsbn           = "SELECT * FROM commodity WHERE extension->>'$.ISBN' = ?"
+	CommodityFindPage                   = "SELECT c.id, c.name, c.type, c.numbering, c.amount, c.price, c.extension FROM commodity AS c INNER JOIN (SELECT id FROM commodity LIMIT ?, ?) AS i ON i.`id` = c.`id`"
+	CommodityFindPageByType             = "SELECT c.id, c.name, c.type, c.numbering, c.amount, c.price, c.extension FROM commodity AS c INNER JOIN (SELECT id FROM commodity WHERE `type` = ? LIMIT ?, ?) AS i ON i.`id` = c.`id`"
+	CommodityFindPageByFuzzyName        = "SELECT c.id, c.name, c.type, c.numbering, c.amount, c.price, c.extension FROM commodity AS c INNER JOIN (SELECT id FROM commodity WHERE `name` like CONCAT('%', ?, '%') LIMIT ?, ?) AS i ON i.`id` = c.`id`"
+	CommodityFindPageByFuzzyNameAndType = "SELECT c.id, c.name, c.type, c.numbering, c.amount, c.price, c.extension FROM commodity AS c INNER JOIN (SELECT id FROM commodity WHERE `type` = ? AND `name` like CONCAT('%', ?, '%') LIMIT ?, ?) AS i ON i.`id` = c.`id`"
+)
+
+var (
+	OrderFindPageOrderByTimeDesc                       = "SELECT o.id, o.user_id, o.admin_id, o.time, o.commodities, o.payment, o.`status`, o.type FROM `order` AS o INNER JOIN (SELECT id FROM `order` ORDER BY time DESC LIMIT ?, ?) AS i ON i.id = o.id"
+	OrderFindPageOrderByTimeAsc                        = "SELECT o.id, o.user_id, o.admin_id, o.time, o.commodities, o.payment, o.`status`, o.type FROM `order` AS o INNER JOIN (SELECT id FROM `order` ORDER BY time ASC LIMIT ?, ?) AS i ON i.id = o.id"
+	OrderFindPageByStatusOrderByTimeDesc               = "SELECT o.id, o.user_id, o.admin_id, o.time, o.commodities, o.payment, o.`status`, o.type FROM `order` AS o INNER JOIN (SELECT id FROM `order` WHERE `status` = ? ORDER BY time DESC LIMIT ?, ?) AS i ON i.id = o.id"
+	OrderFindPageByStatusOrderByTimeAsc                = "SELECT o.id, o.user_id, o.admin_id, o.time, o.commodities, o.payment, o.`status`, o.type FROM `order` AS o INNER JOIN (SELECT id FROM `order` WHERE `status` = ? ORDER BY time ASC LIMIT ?, ?) AS i ON i.id = o.id"
+	OrderFindUserViewPageByUidOrderByTimeDesc          = "SELECT o.id, o.user_id, o.time, o.commodities, o.payment FROM `order` AS o INNER JOIN (SELECT id FROM `order` WHERE `user_id` = ? ORDER BY time DESC LIMIT ?, ?) AS i ON i.id = o.id"
+	OrderFindUserViewPageByUidOrderByTimeAsc           = "SELECT o.id, o.user_id, o.time, o.commodities, o.payment FROM `order` AS o INNER JOIN (SELECT id FROM `order` WHERE `user_id` = ? ORDER BY time Asc LIMIT ?, ?) AS i ON i.id = o.id"
+	OrderFindUserViewPageByUidAndStatusOrderByTimeDesc = "SELECT o.id, o.user_id, o.time, o.commodities, o.payment FROM `order` AS o INNER JOIN (SELECT id FROM `order` WHERE `user_id` = ? AND `status` = ? ORDER BY time DESC LIMIT ?, ?) AS i ON i.id = o.id"
+	OrderFindUserViewPageByUidAndStatusOrderByTimeAsc  = "SELECT o.id, o.user_id, o.time, o.commodities, o.payment FROM `order` AS o INNER JOIN (SELECT id FROM `order` WHERE `user_id` = ? AND `status` = ? ORDER BY time Asc LIMIT ?, ?) AS i ON i.id = o.id"
+)

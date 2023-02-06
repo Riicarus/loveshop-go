@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/riicarus/loveshop/internal/context"
@@ -10,6 +11,7 @@ import (
 	"github.com/riicarus/loveshop/internal/service"
 	"github.com/riicarus/loveshop/pkg/e"
 	"github.com/riicarus/loveshop/pkg/resp"
+	"github.com/riicarus/loveshop/pkg/util"
 )
 
 func OrderAdd(svcctx *context.ServiceContext) gin.HandlerFunc {
@@ -68,6 +70,98 @@ func OrderFinish(svcctx *context.ServiceContext) gin.HandlerFunc {
 			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.INTERNAL_ERROR_MSG, e.INTERNAL_ERROR_CODE))
 		} else {
 			ctx.JSON(http.StatusOK, resp.OK(""))
+		}
+	}
+}
+
+func OrderFindDetailAdminViewPageOrderByTime(svcctx *context.ServiceContext) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		desc, err1 := strconv.ParseBool(ctx.Param("desc"))
+		num, err2 := strconv.Atoi(ctx.Param("num"))
+		size, err3 := strconv.Atoi(ctx.Param("size"))
+		if err1 != nil || err2 != nil || err3 != nil {
+			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.VALIDATE_FAILED_MSG, e.VALIDATE_FAILED_CODE))
+			return
+		}
+
+		page := util.NewPage[*dto.OrderDetailAdminView](num, size)
+
+		orderService := service.NewOrderService(svcctx)
+		err4 := orderService.FindDetailAdminViewPageOrderByTime(ctx, desc, page)
+		if err4 != nil {
+			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.VALIDATE_FAILED_MSG, e.VALIDATE_FAILED_CODE))
+		} else {
+			ctx.JSON(http.StatusOK, resp.OK(page))
+		}
+	}
+}
+
+func OrderFindDetailAdminViewPageByStatusOrderByTime(svcctx *context.ServiceContext) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		status := ctx.Param("status")
+		desc, err1 := strconv.ParseBool(ctx.Param("desc"))
+		num, err2 := strconv.Atoi(ctx.Param("num"))
+		size, err3 := strconv.Atoi(ctx.Param("size"))
+		if err1 != nil || err2 != nil || err3 != nil {
+			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.VALIDATE_FAILED_MSG, e.VALIDATE_FAILED_CODE))
+			return
+		}
+
+		page := util.NewPage[*dto.OrderDetailAdminView](num, size)
+
+		orderService := service.NewOrderService(svcctx)
+		err4 := orderService.FindDetailAdminViewPageByStatusOrderByTime(ctx, status, desc, page)
+		if err4 != nil {
+			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.VALIDATE_FAILED_MSG, e.VALIDATE_FAILED_CODE))
+		} else {
+			ctx.JSON(http.StatusOK, resp.OK(page))
+		}
+	}
+}
+
+func OrderFindDetailUserViewPageByUidOrderByTime(svcctx *context.ServiceContext) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		uid := ctx.Param("uid")
+		desc, err1 := strconv.ParseBool(ctx.Param("desc"))
+		num, err2 := strconv.Atoi(ctx.Param("num"))
+		size, err3 := strconv.Atoi(ctx.Param("size"))
+		if err1 != nil || err2 != nil || err3 != nil {
+			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.VALIDATE_FAILED_MSG, e.VALIDATE_FAILED_CODE))
+			return
+		}
+
+		page := util.NewPage[*dto.OrderDetailUserView](num, size)
+
+		orderService := service.NewOrderService(svcctx)
+		err4 := orderService.FindDetailUserViewPageByUidOrderByTime(ctx, uid, desc, page)
+		if err4 != nil {
+			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.VALIDATE_FAILED_MSG, e.VALIDATE_FAILED_CODE))
+		} else {
+			ctx.JSON(http.StatusOK, resp.OK(page))
+		}
+	}
+}
+
+func OrderFindDetailUserViewPageByUidAndStatusOrderByTime(svcctx *context.ServiceContext) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		uid := ctx.Param("uid")
+		status := ctx.Param("status")
+		desc, err1 := strconv.ParseBool(ctx.Param("desc"))
+		num, err2 := strconv.Atoi(ctx.Param("num"))
+		size, err3 := strconv.Atoi(ctx.Param("size"))
+		if err1 != nil || err2 != nil || err3 != nil {
+			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.VALIDATE_FAILED_MSG, e.VALIDATE_FAILED_CODE))
+			return
+		}
+
+		page := util.NewPage[*dto.OrderDetailUserView](num, size)
+
+		orderService := service.NewOrderService(svcctx)
+		err4 := orderService.FindDetailUserViewPageByUidAndStatusOrderByTime(ctx, uid, status, desc, page)
+		if err4 != nil {
+			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.VALIDATE_FAILED_MSG, e.VALIDATE_FAILED_CODE))
+		} else {
+			ctx.JSON(http.StatusOK, resp.OK(page))
 		}
 	}
 }

@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/riicarus/loveshop/internal/constant"
+	"github.com/riicarus/loveshop/internal/sql"
 	"github.com/riicarus/loveshop/pkg/connection"
 )
 
@@ -12,7 +13,7 @@ func (m *DefaultOrderModel) Add(order *Order) error {
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -59,4 +60,72 @@ func (m *DefaultOrderModel) FindById(id string) (*Order, error) {
 	}
 
 	return order, nil
+}
+
+func (m *DefaultOrderModel) FindPageOrderByTime(desc bool, num, size int) ([]*Order, error) {
+	orderSlice := make([]*Order, 0)
+
+	var sqlUse string
+	if desc {
+		sqlUse = sql.OrderFindPageOrderByTimeDesc
+	} else {
+		sqlUse = sql.OrderFindPageOrderByTimeAsc
+	}
+
+	err := connection.SqlConn.Raw(sqlUse, num, size).Scan(&orderSlice).Error
+	if err != nil {
+		return nil, err
+	}
+	return orderSlice, nil
+}
+
+func (m *DefaultOrderModel) FindPageByStatusOrderByTime(status string, desc bool, num, size int) ([]*Order, error) {
+	orderSlice := make([]*Order, 0)
+
+	var sqlUse string
+	if desc {
+		sqlUse = sql.OrderFindPageByStatusOrderByTimeDesc
+	} else {
+		sqlUse = sql.OrderFindPageByStatusOrderByTimeAsc
+	}
+	
+	err := connection.SqlConn.Raw(sqlUse, status, num, size).Scan(&orderSlice).Error
+	if err != nil {
+		return nil, err
+	}
+	return orderSlice, nil
+}
+
+func (m *DefaultOrderModel) FindUserViewPageByUidOrderByTime(uid string, desc bool, num, size int) ([]*Order, error) {
+	orderSlice := make([]*Order, 0)
+
+	var sqlUse string
+	if desc {
+		sqlUse = sql.OrderFindUserViewPageByUidOrderByTimeDesc
+	} else {
+		sqlUse = sql.OrderFindUserViewPageByUidOrderByTimeAsc
+	}
+	
+	err := connection.SqlConn.Raw(sqlUse, uid, num, size).Scan(&orderSlice).Error
+	if err != nil {
+		return nil, err
+	}
+	return orderSlice, nil
+}
+
+func (m *DefaultOrderModel) FindUserViewPageByUidAndStatusOrderByTime(uid, status string, desc bool, num, size int) ([]*Order, error) {
+	orderSlice := make([]*Order, 0)
+
+	var sqlUse string
+	if desc {
+		sqlUse = sql.OrderFindUserViewPageByUidAndStatusOrderByTimeDesc
+	} else {
+		sqlUse = sql.OrderFindUserViewPageByUidAndStatusOrderByTimeAsc
+	}
+	
+	err := connection.SqlConn.Raw(sqlUse, uid, status, num, size).Scan(&orderSlice).Error
+	if err != nil {
+		return nil, err
+	}
+	return orderSlice, nil
 }

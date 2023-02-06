@@ -40,5 +40,10 @@ func RegisterHandlers(router *gin.Engine, svcctx *context.ServiceContext) {
 		orderGroupV1.PUT("/cancle/:id", handler.OrderCancle(svcctx))
 		orderGroupV1.PUT("/pay/:id", handler.OrderPay(svcctx))
 		orderGroupV1.PUT("/finish/:id", handler.OrderFinish(svcctx))
+
+		orderGroupV1.GET("/view/detail/admin/:desc/:num/:size", handler.OrderFindDetailAdminViewPageOrderByTime(svcctx))
+		orderGroupV1.GET("/view/detail/admin/status/:status/:desc/:num/:size", handler.OrderFindDetailAdminViewPageByStatusOrderByTime(svcctx))
+		orderGroupV1.GET("/view/detail/user/:uid/:desc/:num/:size", handler.OrderFindDetailUserViewPageByUidOrderByTime(svcctx))
+		orderGroupV1.GET("/view/detail/user/:uid/status/:status/:desc/:num/:size", handler.OrderFindDetailUserViewPageByUidAndStatusOrderByTime(svcctx))
 	}
 }
