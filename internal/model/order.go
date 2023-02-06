@@ -15,6 +15,19 @@ type Order struct {
 	Type        string                      `json:"type"`
 }
 
+type OrderDetail struct {
+	Id          string                      `json:"id"`
+	UserId      string                      `json:"userId"`
+	Username    string                      `json:"username"`
+	AdminId     string                      `json:"adminId"`
+	Adminname   string                      `json:"adminname"`
+	Time        int64                       `json:"time"`
+	Commodities inner.CommodityInOrderSlice `gorm:"TYPE:json" json:"commodities"`
+	Payment     float64                     `json:"payment"`
+	Status      string                      `json:"status"`
+	Type        string                      `json:"type"`
+}
+
 func (Order) TableName() string {
 	return "order"
 }
@@ -27,8 +40,8 @@ type OrderModel interface {
 
 	FindById(id string) (*Order, error)
 
-	FindPageOrderByTime(desc bool, num, size int) ([]*Order, error)
-	FindPageByStatusOrderByTime(status string, desc bool, num, size int) ([]*Order, error)
+	FindPageOrderByTime(desc bool, num, size int) ([]*OrderDetail, error)
+	FindPageByStatusOrderByTime(status string, desc bool, num, size int) ([]*OrderDetail, error)
 	FindUserViewPageByUidOrderByTime(uid string, desc bool, num, size int) ([]*Order, error)
 	FindUserViewPageByUidAndStatusOrderByTime(uid, status string, desc bool, num, size int) ([]*Order, error)
 }

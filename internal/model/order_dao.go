@@ -62,8 +62,8 @@ func (m *DefaultOrderModel) FindById(id string) (*Order, error) {
 	return order, nil
 }
 
-func (m *DefaultOrderModel) FindPageOrderByTime(desc bool, num, size int) ([]*Order, error) {
-	orderSlice := make([]*Order, 0)
+func (m *DefaultOrderModel) FindPageOrderByTime(desc bool, num, size int) ([]*OrderDetail, error) {
+	orderSlice := make([]*OrderDetail, 0)
 
 	var sqlUse string
 	if desc {
@@ -79,8 +79,8 @@ func (m *DefaultOrderModel) FindPageOrderByTime(desc bool, num, size int) ([]*Or
 	return orderSlice, nil
 }
 
-func (m *DefaultOrderModel) FindPageByStatusOrderByTime(status string, desc bool, num, size int) ([]*Order, error) {
-	orderSlice := make([]*Order, 0)
+func (m *DefaultOrderModel) FindPageByStatusOrderByTime(status string, desc bool, num, size int) ([]*OrderDetail, error) {
+	orderSlice := make([]*OrderDetail, 0)
 
 	var sqlUse string
 	if desc {

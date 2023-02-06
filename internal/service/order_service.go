@@ -25,11 +25,13 @@ func NewOrderService(svcctx *context.ServiceContext) *OrderService {
 	}
 }
 
-func (s *OrderService) CastToDetailAdminView(order *model.Order) *dto.OrderDetailAdminView {
+func (s *OrderService) CastToDetailAdminView(order *model.OrderDetail) *dto.OrderDetailAdminView {
 	return &dto.OrderDetailAdminView{
 		Id: order.Id,
 		AdminId: order.AdminId,
+		Adminname: order.Adminname,
 		UserId: order.UserId,
+		Username: order.Username,
 		Time: time.Unix(order.Time, 0).Format("2006-01-02 15:04:05"),
 		Commodities: order.Commodities,
 		Payment: order.Payment,
@@ -38,13 +40,15 @@ func (s *OrderService) CastToDetailAdminView(order *model.Order) *dto.OrderDetai
 	}
 }
 
-func (s *OrderService) CastToDetailAdminViewSlice(orderSlice []*model.Order) []*dto.OrderDetailAdminView {
+func (s *OrderService) CastToDetailAdminViewSlice(orderSlice []*model.OrderDetail) []*dto.OrderDetailAdminView {
 	viewSlice := make([]*dto.OrderDetailAdminView, 0)
 	for _, o := range orderSlice {
 		viewSlice = append(viewSlice, &dto.OrderDetailAdminView{
 			Id: o.Id,
 			AdminId: o.AdminId,
+			Adminname: o.Adminname,
 			UserId: o.UserId,
+			Username: o.Username,
 			Time: time.Unix(o.Time, 0).Format("2006-01-02 15:04:05"),
 			Commodities: o.Commodities,
 			Payment: o.Payment,

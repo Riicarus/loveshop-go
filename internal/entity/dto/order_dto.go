@@ -12,9 +12,11 @@ type OrderAddParam struct {
 type OrderDetailAdminView struct {
 	Id          string                      `json:"id"`
 	UserId      string                      `json:"userId"`
+	Username    string                      `json:"username"`
 	AdminId     string                      `json:"adminId"`
+	Adminname   string                      `json:"adminname"`
 	Time        string                      `json:"time"`
-	Commodities inner.CommodityInOrderSlice `gorm:"TYPE:json" json:"commodities"`
+	Commodities inner.CommodityInOrderSlice `json:"commodities"`
 	Payment     float64                     `json:"payment"`
 	Status      string                      `json:"status"`
 	Type        string                      `json:"type"`
@@ -24,6 +26,6 @@ type OrderDetailUserView struct {
 	Id          string                      `json:"id"`
 	UserId      string                      `json:"userId"`
 	Time        string                      `json:"time"`
-	Commodities inner.CommodityInOrderSlice `gorm:"TYPE:json" json:"commodities"`
+	Commodities inner.CommodityInOrderSlice `json:"commodities"`
 	Payment     float64                     `json:"payment"`
 }
