@@ -63,11 +63,11 @@ func (s *AdminService) LoginWithPass(ctx *gin.Context, loginParam *dto.AdminLogi
 }
 
 func (s *AdminService) Unable(ctx *gin.Context, id string) error {
-	txctx, err1 := connection.NewTxContext()
-	if err1 != nil {
-		return err1
+	txctx, exists := ctx.Get("txctx")
+	if !exists {
+		return errors.New("no txctx in gin.Context")
 	}
-	err := s.svcctx.AdminModel.Conn(txctx).Unable(id)
+	err := s.svcctx.AdminModel.Conn(txctx.(*connection.TxContext)).Unable(id)
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func (s *AdminService) Register(ctx *gin.Context, registerParam *dto.AdminRegist
 	salt := fmt.Sprintf("%d", time.Now().Unix())
 
 	roleIds := make(util.JSONStringSlice, 0)
-	//TODO get role ids from role table by role name
+	//TODO get role ids from  role table by role name
 
 	admin := &model.Admin{
 		Id:          uuid.New().String(),
@@ -94,11 +94,11 @@ func (s *AdminService) Register(ctx *gin.Context, registerParam *dto.AdminRegist
 		Enabled:     true,
 	}
 
-	txctx, err1 := connection.NewTxContext()
-	if err1 != nil {
-		return err1
+	txctx, exists := ctx.Get("txctx")
+	if !exists {
+		return errors.New("no txctx in gin.Context")
 	}
-	err := s.svcctx.AdminModel.Conn(txctx).Register(admin)
+	err := s.svcctx.AdminModel.Conn(txctx.(*connection.TxContext)).Register(admin)
 	if err != nil {
 		fmt.Println("AdminService.Register() err: ", err)
 		return err
