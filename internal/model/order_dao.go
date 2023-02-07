@@ -7,7 +7,7 @@ import (
 	"github.com/riicarus/loveshop/pkg/logic"
 )
 
-type DefaultOrderModel struct{
+type DefaultOrderModel struct {
 	logic.DBModel
 }
 
@@ -18,7 +18,7 @@ func (m *DefaultOrderModel) Conn(txctx *connection.TxContext) OrderModel {
 }
 
 func (m *DefaultOrderModel) Add(order *Order) error {
-	err := m.Txctx.Tx.Create(order).Error
+	err := m.Txctx.DB().Debug().Create(order).Error
 	if err != nil {
 		return err
 	}
@@ -30,7 +30,7 @@ func (m *DefaultOrderModel) CancleOrder(id string) error {
 	order := &Order{
 		Id: id,
 	}
-	err := m.Txctx.Tx.Model(order).Where("status IN('CREATED', 'PAYED')").Update("status", constant.ORDER_STATUS_CANCLED).Error
+	err := m.Txctx.DB().Model(order).Where("status IN('CREATED', 'PAYED')").Update("status", constant.ORDER_STATUS_CANCLED).Error
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func (m *DefaultOrderModel) PayOrder(id string) error {
 	order := &Order{
 		Id: id,
 	}
-	err := m.Txctx.Tx.Model(order).Where("status = 'CREATED'").Update("status", constant.ORDER_STATUS_PAYED).Error
+	err := m.Txctx.DB().Model(order).Where("status = 'CREATED'").Update("status", constant.ORDER_STATUS_PAYED).Error
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (m *DefaultOrderModel) FinishOrder(id string) error {
 	order := &Order{
 		Id: id,
 	}
-	err := m.Txctx.Tx.Model(order).Where("status = 'PAYED'").Update("status", constant.ORDER_STATUS_FINISHED).Error
+	err := m.Txctx.DB().Model(order).Where("status = 'PAYED'").Update("status", constant.ORDER_STATUS_FINISHED).Error
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (m *DefaultOrderModel) FinishOrder(id string) error {
 
 func (m *DefaultOrderModel) FindById(id string) (*Order, error) {
 	order := &Order{}
-	err := m.Txctx.Tx.Where("id = ?").Find(order).Error
+	err := m.Txctx.DB().Where("id = ?").Find(order).Error
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (m *DefaultOrderModel) FindPageOrderByTime(desc bool, num, size int) ([]*Or
 		sqlUse = sql.OrderFindPageOrderByTimeAsc
 	}
 
-	err := m.Txctx.Tx.Raw(sqlUse, num, size).Scan(&orderSlice).Error
+	err := m.Txctx.DB().Raw(sqlUse, num, size).Scan(&orderSlice).Error
 	if err != nil {
 		return nil, err
 	}
@@ -97,8 +97,8 @@ func (m *DefaultOrderModel) FindPageByStatusOrderByTime(status string, desc bool
 	} else {
 		sqlUse = sql.OrderFindPageByStatusOrderByTimeAsc
 	}
-	
-	err := m.Txctx.Tx.Raw(sqlUse, status, num, size).Scan(&orderSlice).Error
+
+	err := m.Txctx.DB().Raw(sqlUse, status, num, size).Scan(&orderSlice).Error
 	if err != nil {
 		return nil, err
 	}
@@ -114,8 +114,8 @@ func (m *DefaultOrderModel) FindUserViewPageByUidOrderByTime(uid string, desc bo
 	} else {
 		sqlUse = sql.OrderFindUserViewPageByUidOrderByTimeAsc
 	}
-	
-	err := m.Txctx.Tx.Raw(sqlUse, uid, num, size).Scan(&orderSlice).Error
+
+	err := m.Txctx.DB().Raw(sqlUse, uid, num, size).Scan(&orderSlice).Error
 	if err != nil {
 		return nil, err
 	}
@@ -131,8 +131,8 @@ func (m *DefaultOrderModel) FindUserViewPageByUidAndStatusOrderByTime(uid, statu
 	} else {
 		sqlUse = sql.OrderFindUserViewPageByUidAndStatusOrderByTimeAsc
 	}
-	
-	err := m.Txctx.Tx.Raw(sqlUse, uid, status, num, size).Scan(&orderSlice).Error
+
+	err := m.Txctx.DB().Raw(sqlUse, uid, status, num, size).Scan(&orderSlice).Error
 	if err != nil {
 		return nil, err
 	}

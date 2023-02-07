@@ -20,7 +20,7 @@ func (m *DefaultAdminModel) Conn(txctx *connection.TxContext) AdminModel {
 
 func (m *DefaultAdminModel) FindById(id string) (*Admin, error) {
 	admin := &Admin{}
-	err := m.Txctx.Tx.Where("id = ?", id).Find(admin).Error
+	err := m.Txctx.DB().Where("id = ?", id).Find(admin).Error
 	if err != nil {
 		fmt.Println("DefaultAdminModel.FindById() err: ", err)
 		return nil, err
@@ -31,7 +31,7 @@ func (m *DefaultAdminModel) FindById(id string) (*Admin, error) {
 
 func (m *DefaultAdminModel) FindByStudentId(studentId string) (*Admin, error) {
 	admin := &Admin{}
-	err := m.Txctx.Tx.Where("student_id = ?", studentId).Find(admin).Error
+	err := m.Txctx.DB().Where("student_id = ?", studentId).Find(admin).Error
 
 	if err != nil {
 		fmt.Println("DefaultAdminModel.FindByStudentId() err: ", err)
@@ -42,7 +42,7 @@ func (m *DefaultAdminModel) FindByStudentId(studentId string) (*Admin, error) {
 }
 
 func (m *DefaultAdminModel) Unable(id string) error {
-	err := m.Txctx.Tx.Model(&Admin{}).Where("id = ?", id).Update("enabled", false).Error
+	err := m.Txctx.DB().Model(&Admin{}).Where("id = ?", id).Update("enabled", false).Error
 	if err != nil {
 		fmt.Println("DefaultAdminModel.Unable() err: ", err)
 		return err
@@ -52,11 +52,11 @@ func (m *DefaultAdminModel) Unable(id string) error {
 }
 
 func (m *DefaultAdminModel) Register(admin *Admin) error {
-	err := m.Txctx.Tx.Save(admin).Error
+	err := m.Txctx.DB().Save(admin).Error
 	if err != nil {
 		fmt.Println("DefaultAdminModel.Register() err: ", err)
 		return err
 	}
-	
+
 	return nil
 }

@@ -7,18 +7,18 @@ import (
 	"gorm.io/gorm"
 )
 
-type DefaultCommodityModel struct{
+type DefaultCommodityModel struct {
 	logic.DBModel
 }
 
 func (m *DefaultCommodityModel) Conn(txctx *connection.TxContext) CommodityModel {
 	m.Txctx = txctx
-	
+
 	return m
 }
 
 func (m *DefaultCommodityModel) Add(commodity *Commodity) error {
-	err := m.Txctx.Tx.Create(commodity).Error
+	err := m.Txctx.DB().Create(commodity).Error
 	if err != nil {
 		return err
 	}
@@ -28,7 +28,7 @@ func (m *DefaultCommodityModel) Add(commodity *Commodity) error {
 
 func (m *DefaultCommodityModel) Update(commodity *Commodity) error {
 	// the sturct in Updates() must be the database mapping model
-	err := m.Txctx.Tx.Model(commodity).Updates(commodity).Error
+	err := m.Txctx.DB().Model(commodity).Updates(commodity).Error
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func (m *DefaultCommodityModel) UpdateAmount(id string, number int) error {
 		Id: id,
 	}
 
-	err := m.Txctx.Tx.Model(commodity).Where("amount + ? >= 0", number).Update("amount", gorm.Expr("amount + ?", number)).Error
+	err := m.Txctx.DB().Model(commodity).Where("amount + ? >= 0", number).Update("amount", gorm.Expr("amount + ?", number)).Error
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (m *DefaultCommodityModel) Delete(id string) error {
 	commodity := &Commodity{
 		Id: id,
 	}
-	err := m.Txctx.Tx.Model(commodity).Update("deleted", true).Error
+	err := m.Txctx.DB().Model(commodity).Update("deleted", true).Error
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (m *DefaultCommodityModel) Undelete(id string) error {
 	commodity := &Commodity{
 		Id: id,
 	}
-	err := m.Txctx.Tx.Model(commodity).Update("deleted", false).Error
+	err := m.Txctx.DB().Model(commodity).Update("deleted", false).Error
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (m *DefaultCommodityModel) Undelete(id string) error {
 
 func (m *DefaultCommodityModel) FindById(id string) (*Commodity, error) {
 	commodity := &Commodity{}
-	err := m.Txctx.Tx.Where("id = ?", id).Find(commodity).Error
+	err := m.Txctx.DB().Where("id = ?", id).Find(commodity).Error
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (m *DefaultCommodityModel) FindById(id string) (*Commodity, error) {
 
 func (m *DefaultCommodityModel) FindByIsbn(isbn string) (*Commodity, error) {
 	commodity := &Commodity{}
-	err := m.Txctx.Tx.Raw(sql.CommodityFindDetailByIsbn, isbn).Scan(commodity).Error
+	err := m.Txctx.DB().Raw(sql.CommodityFindDetailByIsbn, isbn).Scan(commodity).Error
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (m *DefaultCommodityModel) FindByIsbn(isbn string) (*Commodity, error) {
 
 func (m *DefaultCommodityModel) FindPage(num, size int) ([]*Commodity, error) {
 	commoditySlice := make([]*Commodity, 0, size)
-	err := m.Txctx.Tx.Raw(sql.CommodityFindPage, num, size).Scan(&commoditySlice).Error
+	err := m.Txctx.DB().Raw(sql.CommodityFindPage, num, size).Scan(&commoditySlice).Error
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (m *DefaultCommodityModel) FindPage(num, size int) ([]*Commodity, error) {
 
 func (m *DefaultCommodityModel) FindPageByType(t string, num, size int) ([]*Commodity, error) {
 	commoditySlice := make([]*Commodity, 0, size)
-	err := m.Txctx.Tx.Raw(sql.CommodityFindPageByType, t, num, size).Scan(&commoditySlice).Error
+	err := m.Txctx.DB().Raw(sql.CommodityFindPageByType, t, num, size).Scan(&commoditySlice).Error
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (m *DefaultCommodityModel) FindPageByType(t string, num, size int) ([]*Comm
 
 func (m *DefaultCommodityModel) FindPageByFuzzyName(name string, num, size int) ([]*Commodity, error) {
 	commoditySlice := make([]*Commodity, 0, size)
-	err := m.Txctx.Tx.Raw(sql.CommodityFindPageByFuzzyName, name, num, size).Scan(&commoditySlice).Error
+	err := m.Txctx.DB().Raw(sql.CommodityFindPageByFuzzyName, name, num, size).Scan(&commoditySlice).Error
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (m *DefaultCommodityModel) FindPageByFuzzyName(name string, num, size int) 
 
 func (m *DefaultCommodityModel) FindPageByFuzzyNameAndType(name, t string, num, size int) ([]*Commodity, error) {
 	commoditySlice := make([]*Commodity, 0, size)
-	err := m.Txctx.Tx.Raw(sql.CommodityFindPageByFuzzyNameAndType, t, name, num, size).Scan(&commoditySlice).Error
+	err := m.Txctx.DB().Raw(sql.CommodityFindPageByFuzzyNameAndType, t, name, num, size).Scan(&commoditySlice).Error
 	if err != nil {
 		return nil, err
 	}

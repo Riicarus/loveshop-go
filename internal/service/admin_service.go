@@ -63,11 +63,12 @@ func (s *AdminService) LoginWithPass(ctx *gin.Context, loginParam *dto.AdminLogi
 }
 
 func (s *AdminService) Unable(ctx *gin.Context, id string) error {
-	txctx, exists := ctx.Get("txctx")
+	txctxAny, exists := ctx.Get("txctx")
 	if !exists {
 		return errors.New("no txctx in gin.Context")
 	}
-	err := s.svcctx.AdminModel.Conn(txctx.(*connection.TxContext)).Unable(id)
+	txctx := txctxAny.(*connection.TxContext)
+	err := s.svcctx.AdminModel.Conn(txctx).Unable(id)
 	if err != nil {
 		return err
 	}

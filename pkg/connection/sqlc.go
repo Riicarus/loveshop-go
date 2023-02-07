@@ -1,16 +1,21 @@
 package connection
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/riicarus/loveshop/conf"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func NewSqlConn() (*gorm.DB, error) {
-	conn, err := gorm.Open(mysql.Open(conf.ServiceConf.Gorm.Mysql.Dsn), &gorm.Config{})
+	conn, err := gorm.Open(mysql.Open(conf.ServiceConf.Gorm.Mysql.Dsn), &gorm.Config{
+		SkipDefaultTransaction: true,
+		Logger:                 logger.Default.LogMode(logger.Info),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -27,10 +32,11 @@ func NewSqlConn() (*gorm.DB, error) {
 }
 
 type TxContext struct {
-	Tx   *gorm.DB
+	Db *gorm.DB
 
 	txLock sync.RWMutex
-	inTx bool
+	Tx     *gorm.DB
+	inTx   bool
 }
 
 func NewTxContext() (*TxContext, error) {
@@ -39,14 +45,49 @@ func NewTxContext() (*TxContext, error) {
 		return nil, err
 	}
 	return &TxContext{
-		Tx: DB,
+		Db:   DB,
 		inTx: false,
 	}, nil
 }
 
+// get gorm db connection, if in transaction, return tx
+func (c *TxContext) DB() *gorm.DB {
+	var db *gorm.DB
+
+	c.txLock.RLock()
+	if c.inTx {
+		db = c.Tx
+	} else {
+		db = c.Db
+	}
+	c.txLock.RUnlock()
+
+	return db
+}
+
 func (c *TxContext) StartTx() {
 	c.txLock.Lock()
+	c.Tx = c.Db.Begin()
 	c.inTx = true
+	c.txLock.Unlock()
+}
+
+func (c *TxContext) CommitTx() {
+	c.txLock.Lock()
+	err := c.Db.Commit().Error
+	if err != nil {
+		fmt.Println(err)
+	}
+	c.Tx = nil
+	c.inTx = false
+	c.txLock.Unlock()
+}
+
+func (c *TxContext) RollBackTx() {
+	c.txLock.Lock()
+	c.Db.Rollback()
+	c.Tx = nil
+	c.inTx = false
 	c.txLock.Unlock()
 }
 

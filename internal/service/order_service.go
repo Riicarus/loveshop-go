@@ -29,16 +29,16 @@ func NewOrderService(svcctx *context.ServiceContext) *OrderService {
 
 func (s *OrderService) CastToDetailAdminView(order *model.OrderDetail) *dto.OrderDetailAdminView {
 	return &dto.OrderDetailAdminView{
-		Id: order.Id,
-		AdminId: order.AdminId,
-		Adminname: order.Adminname,
-		UserId: order.UserId,
-		Username: order.Username,
-		Time: time.Unix(order.Time, 0).Format("2006-01-02 15:04:05"),
+		Id:          order.Id,
+		AdminId:     order.AdminId,
+		Adminname:   order.Adminname,
+		UserId:      order.UserId,
+		Username:    order.Username,
+		Time:        time.Unix(order.Time, 0).Format("2006-01-02 15:04:05"),
 		Commodities: order.Commodities,
-		Payment: order.Payment,
-		Status: order.Status,
-		Type: order.Type,
+		Payment:     order.Payment,
+		Status:      order.Status,
+		Type:        order.Type,
 	}
 }
 
@@ -46,16 +46,16 @@ func (s *OrderService) CastToDetailAdminViewSlice(orderSlice []*model.OrderDetai
 	viewSlice := make([]*dto.OrderDetailAdminView, 0)
 	for _, o := range orderSlice {
 		viewSlice = append(viewSlice, &dto.OrderDetailAdminView{
-			Id: o.Id,
-			AdminId: o.AdminId,
-			Adminname: o.Adminname,
-			UserId: o.UserId,
-			Username: o.Username,
-			Time: time.Unix(o.Time, 0).Format("2006-01-02 15:04:05"),
+			Id:          o.Id,
+			AdminId:     o.AdminId,
+			Adminname:   o.Adminname,
+			UserId:      o.UserId,
+			Username:    o.Username,
+			Time:        time.Unix(o.Time, 0).Format("2006-01-02 15:04:05"),
 			Commodities: o.Commodities,
-			Payment: o.Payment,
-			Status: o.Status,
-			Type: o.Type,
+			Payment:     o.Payment,
+			Status:      o.Status,
+			Type:        o.Type,
 		})
 	}
 
@@ -64,11 +64,11 @@ func (s *OrderService) CastToDetailAdminViewSlice(orderSlice []*model.OrderDetai
 
 func (s *OrderService) CastToDetailUserView(order *model.Order) *dto.OrderDetailUserView {
 	return &dto.OrderDetailUserView{
-		Id: order.Id,
-		UserId: order.UserId,
-		Time: time.Unix(order.Time, 0).Format("2006-01-02 15:04:05"),
+		Id:          order.Id,
+		UserId:      order.UserId,
+		Time:        time.Unix(order.Time, 0).Format("2006-01-02 15:04:05"),
 		Commodities: order.Commodities,
-		Payment: order.Payment,
+		Payment:     order.Payment,
 	}
 }
 
@@ -76,11 +76,11 @@ func (s *OrderService) CastToDetailUserViewSlice(orderSlice []*model.Order) []*d
 	viewSlice := make([]*dto.OrderDetailUserView, 0)
 	for _, o := range orderSlice {
 		viewSlice = append(viewSlice, &dto.OrderDetailUserView{
-			Id: o.Id,
-			UserId: o.UserId,
-			Time: time.Unix(o.Time, 0).Format("2006-01-02 15:04:05"),
+			Id:          o.Id,
+			UserId:      o.UserId,
+			Time:        time.Unix(o.Time, 0).Format("2006-01-02 15:04:05"),
 			Commodities: o.Commodities,
-			Payment: o.Payment,
+			Payment:     o.Payment,
 		})
 	}
 
@@ -107,34 +107,47 @@ func (s *OrderService) Add(ctx *gin.Context, param *dto.OrderAddParam) error {
 	}
 
 	var payment float64
-	for _, c := range param.Commodities{
+	for _, c := range param.Commodities {
 		payment += c.Discount * c.Price * float64(c.Amount)
 	}
 
 	order := &model.Order{
-		Id: uuid.New().String(),
-		UserId: param.UserId,
-		AdminId: param.AdminId,
-		Time: time.Now().UnixMilli(),
+		Id:          uuid.New().String(),
+		UserId:      param.UserId,
+		AdminId:     param.AdminId,
+		Time:        time.Now().UnixMilli(),
 		Commodities: param.Commodities,
-		Payment: payment,
-		Status: constant.ORDER_STATUS_CREATED,
-		Type: param.Type,
+		Payment:     payment,
+		Status:      constant.ORDER_STATUS_CREATED,
+		Type:        param.Type,
 	}
 
-	ctx.Set("tx", true)
-
-	txctx, exists := ctx.Get("txctx")
+	txctxAny, exists := ctx.Get("txctx")
 	if !exists {
 		return errors.New("no txctx in gin.Context")
 	}
-	err := s.svcctx.OrderModel.Conn(txctx.(*connection.TxContext)).Add(order)
+	txctx := txctxAny.(*connection.TxContext)
+	
+	txctx.StartTx()
+	err := s.svcctx.OrderModel.Conn(txctx).Add(order)
 	if err != nil {
 		fmt.Println("OrderService.Add(), database err: ", err)
+		txctx.RollBackTx()
 		return err
 	}
 
+	txctx.CommitTx()
+
 	// TODO decrease stock
+/* 	commodityService := NewCommodityService(s.svcctx)
+	for _, c := range order.Commodities {
+		err2 := commodityService.UpdateAmount(ctx, c.CommodityId, -c.Amount)
+		if err2 != nil {
+			fmt.Println("OrderService().Add(), commodity service err: ", err2)
+			txctx.RollBackTx()
+			return err2
+		}
+	} */
 
 	return nil
 }
