@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/riicarus/loveshop/pkg/logic"
 	"github.com/riicarus/loveshop/pkg/util"
 )
 
@@ -20,6 +21,8 @@ func (Commodity) TableName() string {
 }
 
 type CommodityModel interface {
+	logic.IDBModel[CommodityModel]
+
 	Add(commoidty *Commodity) error
 
 	Update(commodity *Commodity) error

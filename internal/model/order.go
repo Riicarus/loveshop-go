@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/riicarus/loveshop/internal/model/inner"
+	"github.com/riicarus/loveshop/pkg/logic"
 )
 
 type Order struct {
@@ -33,6 +34,8 @@ func (Order) TableName() string {
 }
 
 type OrderModel interface {
+	logic.IDBModel[OrderModel]
+
 	Add(order *Order) error
 	CancleOrder(id string) error
 	PayOrder(id string) error

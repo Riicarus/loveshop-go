@@ -11,6 +11,7 @@ import (
 	"github.com/riicarus/loveshop/internal/context"
 	"github.com/riicarus/loveshop/internal/entity/dto"
 	"github.com/riicarus/loveshop/internal/model"
+	"github.com/riicarus/loveshop/pkg/connection"
 	"github.com/riicarus/loveshop/pkg/e"
 	"github.com/riicarus/loveshop/pkg/util"
 )
@@ -122,7 +123,11 @@ func (s *OrderService) Add(ctx *gin.Context, param *dto.OrderAddParam) error {
 
 	ctx.Set("tx", true)
 
-	err := s.svcctx.OrderModel.Add(order)
+	txctx, err1 := connection.NewTxContext()
+	if err1 != nil {
+		return err1
+	}
+	err := s.svcctx.OrderModel.Conn(txctx).Add(order)
 	if err != nil {
 		fmt.Println("OrderService.Add(), database err: ", err)
 		return err
@@ -134,7 +139,11 @@ func (s *OrderService) Add(ctx *gin.Context, param *dto.OrderAddParam) error {
 }
 
 func (s *OrderService) CancleOrder(ctx *gin.Context, id string) error {
-	err := s.svcctx.OrderModel.CancleOrder(id)
+	txctx, err1 := connection.NewTxContext()
+	if err1 != nil {
+		return err1
+	}
+	err := s.svcctx.OrderModel.Conn(txctx).CancleOrder(id)
 	if err != nil {
 		fmt.Println("OrderService.CancleOrder(), database err: ", err)
 		return err
@@ -144,7 +153,11 @@ func (s *OrderService) CancleOrder(ctx *gin.Context, id string) error {
 }
 
 func (s *OrderService) PayOrder(ctx *gin.Context, id string) error {
-	err := s.svcctx.OrderModel.PayOrder(id)
+	txctx, err1 := connection.NewTxContext()
+	if err1 != nil {
+		return err1
+	}
+	err := s.svcctx.OrderModel.Conn(txctx).PayOrder(id)
 	if err != nil {
 		fmt.Println("OrderService.PayOrder(), database err: ", err)
 		return err
@@ -154,7 +167,11 @@ func (s *OrderService) PayOrder(ctx *gin.Context, id string) error {
 }
 
 func (s *OrderService) FinishOrder(ctx *gin.Context, id string) error {
-	err := s.svcctx.OrderModel.FinishOrder(id)
+	txctx, err1 := connection.NewTxContext()
+	if err1 != nil {
+		return err1
+	}
+	err := s.svcctx.OrderModel.Conn(txctx).FinishOrder(id)
 	if err != nil {
 		fmt.Println("OrderService.FinishOrder(), database err: ", err)
 		return err
@@ -164,7 +181,11 @@ func (s *OrderService) FinishOrder(ctx *gin.Context, id string) error {
 }
 
 func (s *OrderService) FindDetailAdminViewPageOrderByTime(ctx *gin.Context, desc bool, page *util.Page[*dto.OrderDetailAdminView]) error {
-	orderSlice, err := s.svcctx.OrderModel.FindPageOrderByTime(desc, page.Num, page.Size)
+	txctx, err1 := connection.NewTxContext()
+	if err1 != nil {
+		return err1
+	}
+	orderSlice, err := s.svcctx.OrderModel.Conn(txctx).FindPageOrderByTime(desc, page.Num, page.Size)
 	if err != nil {
 		fmt.Println("OrderService.FindDetailAdminViewPageOrderByTime(), err: ", err)
 		return err
@@ -176,7 +197,11 @@ func (s *OrderService) FindDetailAdminViewPageOrderByTime(ctx *gin.Context, desc
 }
 
 func (s *OrderService) FindDetailAdminViewPageByStatusOrderByTime(ctx *gin.Context, status string, desc bool, page *util.Page[*dto.OrderDetailAdminView]) error {
-	orderSlice, err := s.svcctx.OrderModel.FindPageByStatusOrderByTime(status, desc, page.Num, page.Size)
+	txctx, err1 := connection.NewTxContext()
+	if err1 != nil {
+		return err1
+	}
+	orderSlice, err := s.svcctx.OrderModel.Conn(txctx).FindPageByStatusOrderByTime(status, desc, page.Num, page.Size)
 	if err != nil {
 		fmt.Println("OrderService.FindDetailAdminViewPageByStatusOrderByTime(), err: ", err)
 		return err
@@ -188,7 +213,11 @@ func (s *OrderService) FindDetailAdminViewPageByStatusOrderByTime(ctx *gin.Conte
 }
 
 func (s *OrderService) FindDetailUserViewPageByUidOrderByTime(ctx *gin.Context, uid string, desc bool, page *util.Page[*dto.OrderDetailUserView]) error {
-	orderSlice, err := s.svcctx.OrderModel.FindUserViewPageByUidOrderByTime(uid, desc, page.Num, page.Size)
+	txctx, err1 := connection.NewTxContext()
+	if err1 != nil {
+		return err1
+	}
+	orderSlice, err := s.svcctx.OrderModel.Conn(txctx).FindUserViewPageByUidOrderByTime(uid, desc, page.Num, page.Size)
 	if err != nil {
 		fmt.Println("OrderService.FindDetailUserViewPageByUidOrderByTime(), err: ", err)
 		return err
@@ -200,7 +229,11 @@ func (s *OrderService) FindDetailUserViewPageByUidOrderByTime(ctx *gin.Context, 
 }
 
 func (s *OrderService) FindDetailUserViewPageByUidAndStatusOrderByTime(ctx *gin.Context, uid string, status string, desc bool, page *util.Page[*dto.OrderDetailUserView]) error {
-	orderSlice, err := s.svcctx.OrderModel.FindUserViewPageByUidAndStatusOrderByTime(uid, status, desc, page.Num, page.Size)
+	txctx, err1 := connection.NewTxContext()
+	if err1 != nil {
+		return err1
+	}
+	orderSlice, err := s.svcctx.OrderModel.Conn(txctx).FindUserViewPageByUidAndStatusOrderByTime(uid, status, desc, page.Num, page.Size)
 	if err != nil {
 		fmt.Println("OrderService.FindDetailUserViewPageByUidAndStatusOrderByTime(), err: ", err)
 		return err

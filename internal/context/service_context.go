@@ -3,10 +3,11 @@ package context
 import (
 	"github.com/riicarus/loveshop/conf"
 	"github.com/riicarus/loveshop/internal/model"
+	"github.com/riicarus/loveshop/pkg/logic"
 )
 
 type ServiceContext struct {
-	Config *conf.ServiceConfig
+	logic.ServiceContext
 
 	// model
 	AdminModel     model.AdminModel
@@ -17,7 +18,9 @@ type ServiceContext struct {
 
 func NewServiceContext() *ServiceContext {
 	return &ServiceContext{
-		Config: conf.ServiceConf,
+		ServiceContext: logic.ServiceContext{
+			Conf: conf.ServiceConf,
+		},
 
 		AdminModel:     &model.DefaultAdminModel{},
 		UserModel:      &model.DefaultUserModel{},

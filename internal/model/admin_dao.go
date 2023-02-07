@@ -4,13 +4,23 @@ import (
 	"fmt"
 
 	"github.com/riicarus/loveshop/pkg/connection"
+	"github.com/riicarus/loveshop/pkg/logic"
 )
 
-type DefaultAdminModel struct {}
+// TODO add Txctx check
+type DefaultAdminModel struct {
+	logic.DBModel
+}
+
+func (m *DefaultAdminModel) Conn(txctx *connection.TxContext) AdminModel {
+	m.Txctx = txctx
+
+	return m
+}
 
 func (m *DefaultAdminModel) FindById(id string) (*Admin, error) {
 	admin := &Admin{}
-	err := connection.SqlConn.Where("id = ?", id).Find(admin).Error
+	err := m.Txctx.Tx.Where("id = ?", id).Find(admin).Error
 	if err != nil {
 		fmt.Println("DefaultAdminModel.FindById() err: ", err)
 		return nil, err
@@ -21,7 +31,7 @@ func (m *DefaultAdminModel) FindById(id string) (*Admin, error) {
 
 func (m *DefaultAdminModel) FindByStudentId(studentId string) (*Admin, error) {
 	admin := &Admin{}
-	err := connection.SqlConn.Where("student_id = ?", studentId).Find(admin).Error
+	err := m.Txctx.Tx.Where("student_id = ?", studentId).Find(admin).Error
 
 	if err != nil {
 		fmt.Println("DefaultAdminModel.FindByStudentId() err: ", err)
@@ -32,7 +42,7 @@ func (m *DefaultAdminModel) FindByStudentId(studentId string) (*Admin, error) {
 }
 
 func (m *DefaultAdminModel) Unable(id string) error {
-	err := connection.SqlConn.Model(&Admin{}).Where("id = ?", id).Update("enabled", false).Error
+	err := m.Txctx.Tx.Model(&Admin{}).Where("id = ?", id).Update("enabled", false).Error
 	if err != nil {
 		fmt.Println("DefaultAdminModel.Unable() err: ", err)
 		return err
@@ -42,7 +52,7 @@ func (m *DefaultAdminModel) Unable(id string) error {
 }
 
 func (m *DefaultAdminModel) Register(admin *Admin) error {
-	err := connection.SqlConn.Save(admin).Error
+	err := m.Txctx.Tx.Save(admin).Error
 	if err != nil {
 		fmt.Println("DefaultAdminModel.Register() err: ", err)
 		return err

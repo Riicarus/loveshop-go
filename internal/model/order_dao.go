@@ -4,12 +4,21 @@ import (
 	"github.com/riicarus/loveshop/internal/constant"
 	"github.com/riicarus/loveshop/internal/sql"
 	"github.com/riicarus/loveshop/pkg/connection"
+	"github.com/riicarus/loveshop/pkg/logic"
 )
 
-type DefaultOrderModel struct{}
+type DefaultOrderModel struct{
+	logic.DBModel
+}
+
+func (m *DefaultOrderModel) Conn(txctx *connection.TxContext) OrderModel {
+	m.Txctx = txctx
+
+	return m
+}
 
 func (m *DefaultOrderModel) Add(order *Order) error {
-	err := connection.SqlConn.Create(order).Error
+	err := m.Txctx.Tx.Create(order).Error
 	if err != nil {
 		return err
 	}
@@ -21,7 +30,7 @@ func (m *DefaultOrderModel) CancleOrder(id string) error {
 	order := &Order{
 		Id: id,
 	}
-	err := connection.SqlConn.Model(order).Where("status IN('CREATED', 'PAYED')").Update("status", constant.ORDER_STATUS_CANCLED).Error
+	err := m.Txctx.Tx.Model(order).Where("status IN('CREATED', 'PAYED')").Update("status", constant.ORDER_STATUS_CANCLED).Error
 	if err != nil {
 		return err
 	}
@@ -33,7 +42,7 @@ func (m *DefaultOrderModel) PayOrder(id string) error {
 	order := &Order{
 		Id: id,
 	}
-	err := connection.SqlConn.Model(order).Where("status = 'CREATED'").Update("status", constant.ORDER_STATUS_PAYED).Error
+	err := m.Txctx.Tx.Model(order).Where("status = 'CREATED'").Update("status", constant.ORDER_STATUS_PAYED).Error
 	if err != nil {
 		return err
 	}
@@ -44,7 +53,7 @@ func (m *DefaultOrderModel) FinishOrder(id string) error {
 	order := &Order{
 		Id: id,
 	}
-	err := connection.SqlConn.Model(order).Where("status = 'PAYED'").Update("status", constant.ORDER_STATUS_FINISHED).Error
+	err := m.Txctx.Tx.Model(order).Where("status = 'PAYED'").Update("status", constant.ORDER_STATUS_FINISHED).Error
 	if err != nil {
 		return err
 	}
@@ -54,7 +63,7 @@ func (m *DefaultOrderModel) FinishOrder(id string) error {
 
 func (m *DefaultOrderModel) FindById(id string) (*Order, error) {
 	order := &Order{}
-	err := connection.SqlConn.Where("id = ?").Find(order).Error
+	err := m.Txctx.Tx.Where("id = ?").Find(order).Error
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +81,7 @@ func (m *DefaultOrderModel) FindPageOrderByTime(desc bool, num, size int) ([]*Or
 		sqlUse = sql.OrderFindPageOrderByTimeAsc
 	}
 
-	err := connection.SqlConn.Raw(sqlUse, num, size).Scan(&orderSlice).Error
+	err := m.Txctx.Tx.Raw(sqlUse, num, size).Scan(&orderSlice).Error
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +98,7 @@ func (m *DefaultOrderModel) FindPageByStatusOrderByTime(status string, desc bool
 		sqlUse = sql.OrderFindPageByStatusOrderByTimeAsc
 	}
 	
-	err := connection.SqlConn.Raw(sqlUse, status, num, size).Scan(&orderSlice).Error
+	err := m.Txctx.Tx.Raw(sqlUse, status, num, size).Scan(&orderSlice).Error
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +115,7 @@ func (m *DefaultOrderModel) FindUserViewPageByUidOrderByTime(uid string, desc bo
 		sqlUse = sql.OrderFindUserViewPageByUidOrderByTimeAsc
 	}
 	
-	err := connection.SqlConn.Raw(sqlUse, uid, num, size).Scan(&orderSlice).Error
+	err := m.Txctx.Tx.Raw(sqlUse, uid, num, size).Scan(&orderSlice).Error
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +132,7 @@ func (m *DefaultOrderModel) FindUserViewPageByUidAndStatusOrderByTime(uid, statu
 		sqlUse = sql.OrderFindUserViewPageByUidAndStatusOrderByTimeAsc
 	}
 	
-	err := connection.SqlConn.Raw(sqlUse, uid, status, num, size).Scan(&orderSlice).Error
+	err := m.Txctx.Tx.Raw(sqlUse, uid, status, num, size).Scan(&orderSlice).Error
 	if err != nil {
 		return nil, err
 	}

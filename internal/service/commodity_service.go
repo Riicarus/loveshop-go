@@ -81,7 +81,12 @@ func (s *CommodityService) Add(ctx *gin.Context, param *dto.CommodityAddParam) e
 		Extension: param.Extension,
 		Deleted:   false,
 	}
-	err := s.svcctx.CommodityModel.Add(commodity)
+
+	txctx, err1 := connection.NewTxContext()
+	if err1 != nil {
+		return err1
+	}
+	err := s.svcctx.CommodityModel.Conn(txctx).Add(commodity)
 	if err != nil {
 		fmt.Println("CommodityService.Add(), database err: ", err)
 		return err
@@ -104,7 +109,12 @@ func (s *CommodityService) Update(ctx *gin.Context, param *dto.CommodityUpdatePa
 		Price:     param.Price,
 		Extension: param.Extension,
 	}
-	err := s.svcctx.CommodityModel.Update(commodity)
+
+	txctx, err1 := connection.NewTxContext()
+	if err1 != nil {
+		return err1
+	}
+	err := s.svcctx.CommodityModel.Conn(txctx).Update(commodity)
 	if err != nil {
 		fmt.Println("CommodityService.Update(), database err: ", err)
 		return err
@@ -127,7 +137,11 @@ func (s *CommodityService) UpdateAmount(ctx *gin.Context, id string, number int)
 		return e.VALIDATE_ERR
 	}
 
-	err := s.svcctx.CommodityModel.UpdateAmount(id, number)
+	txctx, err1 := connection.NewTxContext()
+	if err1 != nil {
+		return err1
+	}
+	err := s.svcctx.CommodityModel.Conn(txctx).UpdateAmount(id, number)
 	if err != nil {
 		return err
 	}
@@ -149,7 +163,11 @@ func (s *CommodityService) Delete(ctx *gin.Context, id string) error {
 		return e.VALIDATE_ERR
 	}
 
-	err := s.svcctx.CommodityModel.Delete(id)
+	txctx, err1 := connection.NewTxContext()
+	if err1 != nil {
+		return err1
+	}
+	err := s.svcctx.CommodityModel.Conn(txctx).Delete(id)
 	if err != nil {
 		return err
 	}
@@ -171,7 +189,11 @@ func (s *CommodityService) Undelete(ctx *gin.Context, id string) error {
 		return e.VALIDATE_ERR
 	}
 
-	err := s.svcctx.CommodityModel.Undelete(id)
+	txctx, err1 := connection.NewTxContext()
+	if err1 != nil {
+		return err1
+	}
+	err := s.svcctx.CommodityModel.Conn(txctx).Undelete(id)
 	if err != nil {
 		return err
 	}
@@ -199,8 +221,12 @@ func (s *CommodityService) FindDetailViewById(ctx *gin.Context, id string) (*dto
 	}
 
 	// get from db
+	txctx, err1 := connection.NewTxContext()
+	if err1 != nil {
+		return nil, err
+	}
 	if reflect.DeepEqual(*commodity, model.Commodity{}) {
-		commodity, err = s.svcctx.CommodityModel.FindById(id)
+		commodity, err = s.svcctx.CommodityModel.Conn(txctx).FindById(id)
 		if err != nil {
 			fmt.Println("CommodityService.FindDetailById(), database err: ", err)
 			return nil, err
@@ -243,7 +269,11 @@ func (s *CommodityService) FindDetailViewByIsbn(ctx *gin.Context, isbn string) (
 
 	// get from db
 	if reflect.DeepEqual(*commodity, model.Commodity{}) {
-		commodity, err = s.svcctx.CommodityModel.FindByIsbn(isbn)
+		txctx, err1 := connection.NewTxContext()
+		if err1 != nil {
+			return nil, err1
+		}
+		commodity, err = s.svcctx.CommodityModel.Conn(txctx).FindByIsbn(isbn)
 		if err != nil {
 			fmt.Println("CommodityService.FindDetailByIsbn(), database err: ", err)
 			return nil, err
@@ -275,7 +305,11 @@ func (s *CommodityService) FindSimpleViewPage(ctx *gin.Context, page *util.Page[
 	// get cache from redis
 
 	// if redis not cached, get from db
-	commoditySlice, err := s.svcctx.CommodityModel.FindPage(page.Num, page.Size)
+	txctx, err1 := connection.NewTxContext()
+	if err1 != nil {
+		return err1
+	}
+	commoditySlice, err := s.svcctx.CommodityModel.Conn(txctx).FindPage(page.Num, page.Size)
 	if err != nil {
 		fmt.Println("CommodityService.FindSimpleViewPage(), database err: ", err)
 		return err
@@ -288,7 +322,11 @@ func (s *CommodityService) FindSimpleViewPage(ctx *gin.Context, page *util.Page[
 }
 
 func (s *CommodityService) FindSimpleViewPageByType(ctx *gin.Context, t string, page *util.Page[*dto.CommoditySimpleView]) error {
-	commoditySlice, err := s.svcctx.CommodityModel.FindPageByType(t, page.Num, page.Size)
+	txctx, err1 := connection.NewTxContext()
+	if err1 != nil {
+		return err1
+	}
+	commoditySlice, err := s.svcctx.CommodityModel.Conn(txctx).FindPageByType(t, page.Num, page.Size)
 	if err != nil {
 		fmt.Println("CommodityService.FindSimpleViewPageByType(), database err: ", err)
 		return err
@@ -301,7 +339,11 @@ func (s *CommodityService) FindSimpleViewPageByType(ctx *gin.Context, t string, 
 }
 
 func (s *CommodityService) FindSimpleViewPageByFuzzyName(ctx *gin.Context, name string, page *util.Page[*dto.CommoditySimpleView]) error {
-	commoditySlice, err := s.svcctx.CommodityModel.FindPageByFuzzyName(name, page.Num, page.Size)
+	txctx, err1 := connection.NewTxContext()
+	if err1 != nil {
+		return err1
+	}
+	commoditySlice, err := s.svcctx.CommodityModel.Conn(txctx).FindPageByFuzzyName(name, page.Num, page.Size)
 	if err != nil {
 		fmt.Println("CommodityService.FindSimpleViewPageByFuzzyName(), database err: ", err)
 		return err
@@ -314,7 +356,11 @@ func (s *CommodityService) FindSimpleViewPageByFuzzyName(ctx *gin.Context, name 
 }
 
 func (s *CommodityService) FindSimpleViewPageByFuzzyNameAndType(ctx *gin.Context, name string, t string, page *util.Page[*dto.CommoditySimpleView]) error {
-	commoditySlice, err := s.svcctx.CommodityModel.FindPageByFuzzyNameAndType(name, t, page.Num, page.Size)
+	txctx, err1 := connection.NewTxContext()
+	if err1 != nil {
+		return err1
+	}
+	commoditySlice, err := s.svcctx.CommodityModel.Conn(txctx).FindPageByFuzzyNameAndType(name, t, page.Num, page.Size)
 	if err != nil {
 		fmt.Println("CommodityService.FindSimpleViewPageByFuzzyNameAndType(), database err: ", err)
 		return err

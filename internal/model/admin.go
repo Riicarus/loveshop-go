@@ -1,6 +1,9 @@
 package model
 
-import "github.com/riicarus/loveshop/pkg/util"
+import (
+	"github.com/riicarus/loveshop/pkg/logic"
+	"github.com/riicarus/loveshop/pkg/util"
+)
 
 type Admin struct {
 	Id          string               `json:"id"`
@@ -20,6 +23,8 @@ func (Admin) TableName() string {
 }
 
 type AdminModel interface {
+	logic.IDBModel[AdminModel]
+
 	FindById(id string) (*Admin, error)
 	FindByStudentId(studentId string) (*Admin, error)
 

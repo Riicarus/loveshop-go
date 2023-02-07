@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/riicarus/loveshop/internal/context"
 	"github.com/riicarus/loveshop/internal/entity/dto"
 	"github.com/riicarus/loveshop/internal/model"
+	"github.com/riicarus/loveshop/pkg/connection"
 	"github.com/riicarus/loveshop/pkg/e"
 	"github.com/riicarus/loveshop/pkg/util"
 )
@@ -25,7 +27,11 @@ func NewAdminService(svcctx *context.ServiceContext) *AdminService {
 }
 
 func (s *AdminService) LoginWithPass(ctx *gin.Context, loginParam *dto.AdminLoginParam) (string, error) {
-	admin, err1 := s.svcctx.AdminModel.FindByStudentId(loginParam.StudentId)
+	txctx, exists := ctx.Get("txctx")
+	if !exists {
+		return "", errors.New("no txctx in gin.Context")
+	}
+	admin, err1 := s.svcctx.AdminModel.Conn(txctx.(*connection.TxContext)).FindByStudentId(loginParam.StudentId)
 	if err1 != nil {
 		fmt.Println("AdminService.LoginWithPass(), db err: ", err1)
 		return "", err1
@@ -57,7 +63,11 @@ func (s *AdminService) LoginWithPass(ctx *gin.Context, loginParam *dto.AdminLogi
 }
 
 func (s *AdminService) Unable(ctx *gin.Context, id string) error {
-	err := s.svcctx.AdminModel.Unable(id)
+	txctx, err1 := connection.NewTxContext()
+	if err1 != nil {
+		return err1
+	}
+	err := s.svcctx.AdminModel.Conn(txctx).Unable(id)
 	if err != nil {
 		return err
 	}
@@ -84,7 +94,11 @@ func (s *AdminService) Register(ctx *gin.Context, registerParam *dto.AdminRegist
 		Enabled:     true,
 	}
 
-	err := s.svcctx.AdminModel.Register(admin)
+	txctx, err1 := connection.NewTxContext()
+	if err1 != nil {
+		return err1
+	}
+	err := s.svcctx.AdminModel.Conn(txctx).Register(admin)
 	if err != nil {
 		fmt.Println("AdminService.Register() err: ", err)
 		return err
