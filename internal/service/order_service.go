@@ -35,6 +35,7 @@ func (s *OrderService) CastToDetailAdminView(order *model.OrderDetail) *dto.Orde
 		UserId:      order.UserId,
 		Username:    order.Username,
 		Time:        time.Unix(order.Time, 0).Format("2006-01-02 15:04:05"),
+		Timestamp:   order.Time,
 		Commodities: order.Commodities,
 		Payment:     order.Payment,
 		Status:      order.Status,
@@ -52,6 +53,7 @@ func (s *OrderService) CastToDetailAdminViewSlice(orderSlice []*model.OrderDetai
 			UserId:      o.UserId,
 			Username:    o.Username,
 			Time:        time.Unix(o.Time, 0).Format("2006-01-02 15:04:05"),
+			Timestamp:   o.Time,
 			Commodities: o.Commodities,
 			Payment:     o.Payment,
 			Status:      o.Status,
@@ -199,9 +201,9 @@ func (s *OrderService) FinishOrder(ctx *gin.Context, id string) error {
 	// create bill
 	billService := NewBillService(s.svcctx)
 	billAddParam := &dto.BillAddParam{
-		Time: time.Now().UnixMilli(),
-		AdminId: orderDetailView.AdminId,
-		OrderId: orderDetailView.Id,
+		Time:      time.Now().UnixMilli(),
+		AdminId:   orderDetailView.AdminId,
+		OrderId:   orderDetailView.Id,
 		OrderType: orderDetailView.Type,
 	}
 	txfcs = append(txfcs, billService.AddTx(ctx, billAddParam))

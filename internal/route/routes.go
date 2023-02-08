@@ -52,5 +52,6 @@ func RegisterHandlers(router *gin.Engine, svcctx *context.ServiceContext) {
 		billGroupV1.GET("/view/detail/admin/id/:id", handler.BillFindDetailAdminViewById(svcctx))
 		billGroupV1.GET("/view/detail/admin/:desc/:num/:size", handler.BillFindDetailAdminViewPageOrderByTime(svcctx))
 		billGroupV1.GET("/view/detail/admin/type/:orderType/:desc/:num/:size", handler.BillFindDetailAdminViewPageByOrderTypeOrderByTime(svcctx))
+		billGroupV1.GET("/analyze", handler.BillAnalyze(svcctx))
 	}
 }

@@ -71,3 +71,15 @@ func BillFindDetailAdminViewPageByOrderTypeOrderByTime(svcctx *context.ServiceCo
 		}
 	}
 }
+
+func BillAnalyze(svcctx *context.ServiceContext) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		billService := service.NewBillService(svcctx)
+		analyzeInfo, err := billService.Analyze(ctx)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.INTERNAL_ERROR_MSG, e.INTERNAL_ERROR_CODE))
+		} else {
+			ctx.JSON(http.StatusOK, resp.OK(analyzeInfo))
+		}
+	}
+}

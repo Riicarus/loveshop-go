@@ -9,6 +9,12 @@ const (
 // commodity
 const (
 	REDIS_COMMODITY_HASH = "commodity"
+
+	BOOK_TYPE                = "BOOK"
+	CULTURAL_CREATIVITY_TYPE = "CULTURAL_CREATIVITY"
+	DAILY_NECESSITY_TYPE     = "DAILY_NECESSITY"
+	SPORTS_GOODS_TYPE        = "SPORTS_GOODS"
+	BOARD_GAME_TYPE          = "BOARD_GAME"
 )
 
 func RedisCommodityHashKey(id string) string {

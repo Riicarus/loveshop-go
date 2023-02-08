@@ -22,6 +22,7 @@ type BillModel interface {
 	Add(bill *Bill) error
 
 	FindById(id string) (*Bill, error)
+	FindAll() ([]*Bill, error)
 	FindPageOrderByTime(desc bool, num, size int) ([]*Bill, error)
 	FindPageByOrderTypeOrderByTime(orderType string, desc bool, num, size int) ([]*Bill, error)
 }

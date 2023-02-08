@@ -2,11 +2,13 @@ package service
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/riicarus/loveshop/internal/constant"
 	"github.com/riicarus/loveshop/internal/context"
 	"github.com/riicarus/loveshop/internal/entity/dto"
 	"github.com/riicarus/loveshop/internal/model"
@@ -167,7 +169,7 @@ func (s *BillService) FindDetailAdminViewPageOrderByTime(ctx *gin.Context, desc 
 		orderChan <- orderDetailSlice
 	}()
 
-	adminSlice := <- adminChan
+	adminSlice := <-adminChan
 	orderDetailSlice := <-orderChan
 
 	page.Data = s.CastToDetailAdminViewSlice(billSlice, adminSlice, orderDetailSlice)
@@ -216,10 +218,87 @@ func (s *BillService) FindDetailAdminViewPageByOrderTypeOrderByTime(ctx *gin.Con
 		orderChan <- orderDetailSlice
 	}()
 
-	adminSlice := <- adminChan
+	adminSlice := <-adminChan
 	orderDetailSlice := <-orderChan
 
 	page.Data = s.CastToDetailAdminViewSlice(billSlice, adminSlice, orderDetailSlice)
 
 	return nil
+}
+
+func (s *BillService) Analyze(ctx *gin.Context) (*dto.BillAnalyzeInfo, error) {
+	analyzeInfo := &dto.BillAnalyzeInfo{}
+
+	billSlice, err := s.svcctx.BillModel.Conn(s.svcctx.DB).FindAll()
+	if err != nil {
+		return nil, err
+	}
+
+	billDetailSlice := make([]*dto.BillDetailAdminView, 0, len(billSlice))
+	for _, bill := range billSlice {
+		detailView, err2 := s.FindDetailAdminViewById(ctx, bill.Id)
+		if err2 != nil {
+			fmt.Println("BillService.Analyze(), database err: ", err2, " bill id: ", bill.Id)
+			continue
+		}
+
+		billDetailSlice = append(billDetailSlice, detailView)
+	}
+
+	analyzeInfo.BillCount = len(billDetailSlice)
+
+	ccMap := make(map[string]int)
+
+	now := time.Now()
+	dayStart := util.GetZeroTimeOfDay(now).UnixMilli()
+	weekStart := util.GetFirstDateOfWeek(now).UnixMilli()
+	monthStart := util.GetFirstDateOfMonth(now).UnixMilli()
+
+	commodityService := NewCommodityService(s.svcctx)
+
+	for _, billDetail := range billDetailSlice {
+		analyzeInfo.All += billDetail.OrderView.Payment
+
+		if billDetail.OrderView.Timestamp >= dayStart {
+			analyzeInfo.Day += billDetail.OrderView.Payment
+		}
+		if billDetail.OrderView.Timestamp >= weekStart {
+			analyzeInfo.Week += billDetail.OrderView.Payment
+		}
+		if billDetail.OrderView.Timestamp >= monthStart {
+			analyzeInfo.Month += billDetail.OrderView.Payment
+		}
+
+
+		// TODO optimize: save type info in CommodityInOrder struct to avoid unneccessary search
+		for _, commodityInOrder := range billDetail.OrderView.Commodities {
+			commodity, err2 := commodityService.FindDetailViewById(ctx, commodityInOrder.CommodityId)
+			if err2 != nil {
+				fmt.Println("BillService.Analyze(), database err: ", err2, " commodity id: ", commodityInOrder.CommodityId)
+				continue
+			}
+
+			switch commodity.Type {
+			case constant.BOOK_TYPE:
+				analyzeInfo.Book += commodityInOrder.Discount * commodityInOrder.Price * float64(commodityInOrder.Amount)
+			case constant.CULTURAL_CREATIVITY_TYPE:
+				analyzeInfo.CulturalCreativity += commodityInOrder.Discount * commodityInOrder.Price * float64(commodityInOrder.Amount)
+				ccMap[commodity.Name] += commodityInOrder.Amount
+			case constant.DAILY_NECESSITY_TYPE:
+				analyzeInfo.DailyNecessity += commodityInOrder.Discount * commodityInOrder.Price * float64(commodityInOrder.Amount)
+			case constant.SPORTS_GOODS_TYPE:
+				analyzeInfo.SportsGoods += commodityInOrder.Discount * commodityInOrder.Price * float64(commodityInOrder.Amount)
+			case constant.BOARD_GAME_TYPE:
+				analyzeInfo.BoardGame += commodityInOrder.Discount * commodityInOrder.Price * float64(commodityInOrder.Amount)
+			}
+		}
+	}
+
+	ccInfo := make([][]string, 0, len(ccMap))
+	for name, count := range ccMap {
+		ccInfo = append(ccInfo, []string{name, strconv.Itoa(count)})
+	}
+	analyzeInfo.CulturalCreativityInfo = ccInfo
+
+	return analyzeInfo, nil
 }

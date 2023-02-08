@@ -16,6 +16,7 @@ type OrderDetailAdminView struct {
 	AdminId     string                      `json:"adminId"`
 	Adminname   string                      `json:"adminname"`
 	Time        string                      `json:"time"`
+	Timestamp   int64                       `json:"timestamp"`
 	Commodities inner.CommodityInOrderSlice `json:"commodities"`
 	Payment     float64                     `json:"payment"`
 	Status      string                      `json:"status"`

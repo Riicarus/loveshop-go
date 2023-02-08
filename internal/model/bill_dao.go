@@ -34,6 +34,15 @@ func (m *DefaultBillModel) FindById(id string) (*Bill, error) {
 	return bill, nil
 }
 
+func (m *DefaultBillModel) FindAll() ([]*Bill, error) {
+	billSlice := make([]*Bill, 0)
+	if err := m.DB.Find(&billSlice).Error; err != nil {
+		return nil, err
+	}
+
+	return billSlice, nil
+}
+
 func (m *DefaultBillModel) FindPageOrderByTime(desc bool, num, size int) ([]*Bill, error) {
 	billSlice := make([]*Bill, 0)
 
