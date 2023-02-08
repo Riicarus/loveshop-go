@@ -14,4 +14,6 @@ const (
 	RPC_FAILED_CODE RespCode = 3
 
 	INTERNAL_ERROR_CODE RespCode = 4
+
+	STOCK_NOT_ENOUGH_CODE = 5
 )

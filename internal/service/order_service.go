@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -12,9 +11,10 @@ import (
 	"github.com/riicarus/loveshop/internal/context"
 	"github.com/riicarus/loveshop/internal/entity/dto"
 	"github.com/riicarus/loveshop/internal/model"
-	"github.com/riicarus/loveshop/pkg/connection"
 	"github.com/riicarus/loveshop/pkg/e"
+	"github.com/riicarus/loveshop/pkg/logic"
 	"github.com/riicarus/loveshop/pkg/util"
+	"gorm.io/gorm"
 )
 
 type OrderService struct {
@@ -89,75 +89,87 @@ func (s *OrderService) CastToDetailUserViewSlice(orderSlice []*model.Order) []*d
 
 // use transaction to protect
 func (s *OrderService) Add(ctx *gin.Context, param *dto.OrderAddParam) error {
-	if strings.TrimSpace(param.AdminId) == "" && strings.TrimSpace(param.UserId) == "" {
-		return e.VALIDATE_ERR
-	}
-	if len(param.Commodities) == 0 {
-		return e.VALIDATE_ERR
-	}
-	if param.Type != constant.ONLINE && param.Type != constant.OFFLINE {
-		return e.VALIDATE_ERR
-	}
 
-	if strings.TrimSpace(param.AdminId) == "" {
-		param.AdminId = constant.ONLINE
-	}
-	if strings.TrimSpace(param.UserId) == "" {
-		param.UserId = constant.OFFLINE
-	}
-
-	var payment float64
+	txfcs := make([]logic.TxFunc, 0)
+	// add order
+	txfcs = append(txfcs, s.AddTx(ctx, param))
+	// decrease stock
+	commodityService := NewCommodityService(s.svcctx)
 	for _, c := range param.Commodities {
-		payment += c.Discount * c.Price * float64(c.Amount)
+		txfcs = append(txfcs, commodityService.UpdateAmountTx(ctx, c.CommodityId, -c.Amount))
 	}
 
-	order := &model.Order{
-		Id:          uuid.New().String(),
-		UserId:      param.UserId,
-		AdminId:     param.AdminId,
-		Time:        time.Now().UnixMilli(),
-		Commodities: param.Commodities,
-		Payment:     payment,
-		Status:      constant.ORDER_STATUS_CREATED,
-		Type:        param.Type,
+	//err := s.svcctx.DB.Transaction(logic.AsOne(s.svcctx.DB, txfcs))
+	bizErr, txErr := logic.Transaction(s.svcctx.DB, txfcs)
+	if bizErr != nil {
+		return bizErr
+	} else if txErr != nil {
+		return txErr
 	}
-
-	txctxAny, exists := ctx.Get("txctx")
-	if !exists {
-		return errors.New("no txctx in gin.Context")
-	}
-	txctx := txctxAny.(*connection.TxContext)
-	
-	txctx.StartTx()
-	err := s.svcctx.OrderModel.Conn(txctx).Add(order)
-	if err != nil {
-		fmt.Println("OrderService.Add(), database err: ", err)
-		txctx.RollBackTx()
-		return err
-	}
-
-	txctx.CommitTx()
-
-	// TODO decrease stock
-/* 	commodityService := NewCommodityService(s.svcctx)
-	for _, c := range order.Commodities {
-		err2 := commodityService.UpdateAmount(ctx, c.CommodityId, -c.Amount)
-		if err2 != nil {
-			fmt.Println("OrderService().Add(), commodity service err: ", err2)
-			txctx.RollBackTx()
-			return err2
-		}
-	} */
 
 	return nil
 }
 
-func (s *OrderService) CancleOrder(ctx *gin.Context, id string) error {
-	txctx, exists := ctx.Get("txctx")
-	if !exists {
-		return errors.New("no txctx in gin.Context")
+func (s *OrderService) AddTx(ctx *gin.Context, param *dto.OrderAddParam) logic.TxFunc {
+	return func(tx *gorm.DB) error {
+		if strings.TrimSpace(param.AdminId) == "" && strings.TrimSpace(param.UserId) == "" {
+			return e.VALIDATE_ERR
+		}
+		if len(param.Commodities) == 0 {
+			return e.VALIDATE_ERR
+		}
+		if param.Type != constant.ONLINE && param.Type != constant.OFFLINE {
+			return e.VALIDATE_ERR
+		}
+
+		if strings.TrimSpace(param.AdminId) == "" {
+			param.AdminId = constant.ONLINE
+		}
+		if strings.TrimSpace(param.UserId) == "" {
+			param.UserId = constant.OFFLINE
+		}
+
+		var payment float64
+		for _, c := range param.Commodities {
+			payment += c.Discount * c.Price * float64(c.Amount)
+		}
+
+		order := &model.Order{
+			Id:          uuid.New().String(),
+			UserId:      param.UserId,
+			AdminId:     param.AdminId,
+			Time:        time.Now().UnixMilli(),
+			Commodities: param.Commodities,
+			Payment:     payment,
+			Status:      constant.ORDER_STATUS_CREATED,
+			Type:        param.Type,
+		}
+
+		// TODO check if the commodity stock is enough
+		commodityService := NewCommodityService(s.svcctx)
+		for _, c := range order.Commodities {
+			detailView, err2 := commodityService.FindDetailViewById(ctx, c.CommodityId)
+			if err2 != nil {
+				return err2
+			}
+
+			if detailView.Amount < c.Amount {
+				return e.STOCK_ERR
+			}
+		}
+
+		err := s.svcctx.OrderModel.Conn(tx).Add(order)
+		if err != nil {
+			fmt.Println("OrderService.Add(), database err: ", err)
+			return err
+		}
+
+		return nil
 	}
-	err := s.svcctx.OrderModel.Conn(txctx.(*connection.TxContext)).CancleOrder(id)
+}
+
+func (s *OrderService) CancleOrder(ctx *gin.Context, id string) error {
+	err := s.svcctx.OrderModel.Conn(s.svcctx.DB).CancleOrder(id)
 	if err != nil {
 		fmt.Println("OrderService.CancleOrder(), database err: ", err)
 		return err
@@ -167,11 +179,7 @@ func (s *OrderService) CancleOrder(ctx *gin.Context, id string) error {
 }
 
 func (s *OrderService) PayOrder(ctx *gin.Context, id string) error {
-	txctx, exists := ctx.Get("txctx")
-	if !exists {
-		return errors.New("no txctx in gin.Context")
-	}
-	err := s.svcctx.OrderModel.Conn(txctx.(*connection.TxContext)).PayOrder(id)
+	err := s.svcctx.OrderModel.Conn(s.svcctx.DB).PayOrder(id)
 	if err != nil {
 		fmt.Println("OrderService.PayOrder(), database err: ", err)
 		return err
@@ -181,11 +189,7 @@ func (s *OrderService) PayOrder(ctx *gin.Context, id string) error {
 }
 
 func (s *OrderService) FinishOrder(ctx *gin.Context, id string) error {
-	txctx, exists := ctx.Get("txctx")
-	if !exists {
-		return errors.New("no txctx in gin.Context")
-	}
-	err := s.svcctx.OrderModel.Conn(txctx.(*connection.TxContext)).FinishOrder(id)
+	err := s.svcctx.OrderModel.Conn(s.svcctx.DB).FinishOrder(id)
 	if err != nil {
 		fmt.Println("OrderService.FinishOrder(), database err: ", err)
 		return err
@@ -195,11 +199,7 @@ func (s *OrderService) FinishOrder(ctx *gin.Context, id string) error {
 }
 
 func (s *OrderService) FindDetailAdminViewPageOrderByTime(ctx *gin.Context, desc bool, page *util.Page[*dto.OrderDetailAdminView]) error {
-	txctx, exists := ctx.Get("txctx")
-	if !exists {
-		return errors.New("no txctx in gin.Context")
-	}
-	orderSlice, err := s.svcctx.OrderModel.Conn(txctx.(*connection.TxContext)).FindPageOrderByTime(desc, page.Num, page.Size)
+	orderSlice, err := s.svcctx.OrderModel.Conn(s.svcctx.DB).FindPageOrderByTime(desc, page.Num, page.Size)
 	if err != nil {
 		fmt.Println("OrderService.FindDetailAdminViewPageOrderByTime(), err: ", err)
 		return err
@@ -211,11 +211,7 @@ func (s *OrderService) FindDetailAdminViewPageOrderByTime(ctx *gin.Context, desc
 }
 
 func (s *OrderService) FindDetailAdminViewPageByStatusOrderByTime(ctx *gin.Context, status string, desc bool, page *util.Page[*dto.OrderDetailAdminView]) error {
-	txctx, exists := ctx.Get("txctx")
-	if !exists {
-		return errors.New("no txctx in gin.Context")
-	}
-	orderSlice, err := s.svcctx.OrderModel.Conn(txctx.(*connection.TxContext)).FindPageByStatusOrderByTime(status, desc, page.Num, page.Size)
+	orderSlice, err := s.svcctx.OrderModel.Conn(s.svcctx.DB).FindPageByStatusOrderByTime(status, desc, page.Num, page.Size)
 	if err != nil {
 		fmt.Println("OrderService.FindDetailAdminViewPageByStatusOrderByTime(), err: ", err)
 		return err
@@ -227,11 +223,7 @@ func (s *OrderService) FindDetailAdminViewPageByStatusOrderByTime(ctx *gin.Conte
 }
 
 func (s *OrderService) FindDetailUserViewPageByUidOrderByTime(ctx *gin.Context, uid string, desc bool, page *util.Page[*dto.OrderDetailUserView]) error {
-	txctx, exists := ctx.Get("txctx")
-	if !exists {
-		return errors.New("no txctx in gin.Context")
-	}
-	orderSlice, err := s.svcctx.OrderModel.Conn(txctx.(*connection.TxContext)).FindUserViewPageByUidOrderByTime(uid, desc, page.Num, page.Size)
+	orderSlice, err := s.svcctx.OrderModel.Conn(s.svcctx.DB).FindUserViewPageByUidOrderByTime(uid, desc, page.Num, page.Size)
 	if err != nil {
 		fmt.Println("OrderService.FindDetailUserViewPageByUidOrderByTime(), err: ", err)
 		return err
@@ -243,11 +235,7 @@ func (s *OrderService) FindDetailUserViewPageByUidOrderByTime(ctx *gin.Context, 
 }
 
 func (s *OrderService) FindDetailUserViewPageByUidAndStatusOrderByTime(ctx *gin.Context, uid string, status string, desc bool, page *util.Page[*dto.OrderDetailUserView]) error {
-	txctx, exists := ctx.Get("txctx")
-	if !exists {
-		return errors.New("no txctx in gin.Context")
-	}
-	orderSlice, err := s.svcctx.OrderModel.Conn(txctx.(*connection.TxContext)).FindUserViewPageByUidAndStatusOrderByTime(uid, status, desc, page.Num, page.Size)
+	orderSlice, err := s.svcctx.OrderModel.Conn(s.svcctx.DB).FindUserViewPageByUidAndStatusOrderByTime(uid, status, desc, page.Num, page.Size)
 	if err != nil {
 		fmt.Println("OrderService.FindDetailUserViewPageByUidAndStatusOrderByTime(), err: ", err)
 		return err

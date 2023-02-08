@@ -24,10 +24,13 @@ func OrderAdd(svcctx *context.ServiceContext) gin.HandlerFunc {
 
 		orderService := service.NewOrderService(svcctx)
 		err2 := orderService.Add(ctx, param)
-		if err2 != nil {
-			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.INTERNAL_ERROR_MSG, e.INTERNAL_ERROR_CODE))
-		} else {
+		switch err2 {
+		case e.STOCK_ERR:
+			ctx.JSON(http.StatusOK, resp.Fail[string](e.STOCK_ERR.Msg, e.STOCK_ERR.Code))
+		case nil:
 			ctx.JSON(http.StatusOK, resp.OK(""))
+		default:
+			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.INTERNAL_ERROR_MSG, e.INTERNAL_ERROR_CODE))
 		}
 	}
 }

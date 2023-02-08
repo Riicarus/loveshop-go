@@ -9,7 +9,6 @@ import (
 	"github.com/riicarus/loveshop/internal/context"
 	"github.com/riicarus/loveshop/internal/route"
 	"github.com/riicarus/loveshop/pkg/connection"
-	"github.com/riicarus/loveshop/pkg/middleware"
 )
 
 func main() {
@@ -18,9 +17,6 @@ func main() {
 	connection.InitRedisConn()
 
 	router := gin.Default()
-
-	// start global TxContext
-	router.Use(middleware.TxMiddleware())
 
 	svctx := context.NewServiceContext()
 	route.RegisterHandlers(router, svctx)
