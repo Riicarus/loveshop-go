@@ -98,7 +98,6 @@ func (s *OrderService) Add(ctx *gin.Context, param *dto.OrderAddParam) error {
 		txfcs = append(txfcs, commodityService.UpdateAmountTx(ctx, c.CommodityId, -c.Amount))
 	}
 
-	//err := s.svcctx.DB.Transaction(logic.AsOne(s.svcctx.DB, txfcs))
 	bizErr, txErr := logic.Transaction(s.svcctx.DB, txfcs)
 	if bizErr != nil {
 		return bizErr
