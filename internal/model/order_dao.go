@@ -71,6 +71,16 @@ func (m *DefaultOrderModel) FindById(id string) (*Order, error) {
 	return order, nil
 }
 
+func (m *DefaultOrderModel) FindDetailById(id string) (*OrderDetail, error) {
+	orderDetail := &OrderDetail{}
+
+	if err := m.DB.Raw(sql.OrderFindDetailAdminViewById, id).Scan(orderDetail).Error; err != nil {
+		return nil, err
+	}
+
+	return orderDetail, nil
+}
+
 func (m *DefaultOrderModel) FindPageOrderByTime(desc bool, num, size int) ([]*OrderDetail, error) {
 	orderSlice := make([]*OrderDetail, 0)
 

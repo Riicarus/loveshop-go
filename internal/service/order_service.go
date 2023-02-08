@@ -89,7 +89,6 @@ func (s *OrderService) CastToDetailUserViewSlice(orderSlice []*model.Order) []*d
 
 // use transaction to protect
 func (s *OrderService) Add(ctx *gin.Context, param *dto.OrderAddParam) error {
-
 	txfcs := make([]logic.TxFunc, 0)
 	// add order
 	txfcs = append(txfcs, s.AddTx(ctx, param))
@@ -145,7 +144,7 @@ func (s *OrderService) AddTx(ctx *gin.Context, param *dto.OrderAddParam) logic.T
 			Type:        param.Type,
 		}
 
-		// TODO check if the commodity stock is enough
+		// may be slow, could use routine
 		commodityService := NewCommodityService(s.svcctx)
 		for _, c := range order.Commodities {
 			detailView, err2 := commodityService.FindDetailViewById(ctx, c.CommodityId)
@@ -189,13 +188,54 @@ func (s *OrderService) PayOrder(ctx *gin.Context, id string) error {
 }
 
 func (s *OrderService) FinishOrder(ctx *gin.Context, id string) error {
-	err := s.svcctx.OrderModel.Conn(s.svcctx.DB).FinishOrder(id)
-	if err != nil {
+	orderDetailView, err := s.FindDetailAdminViewById(ctx, id)
+	if err != nil || orderDetailView == nil {
 		fmt.Println("OrderService.FinishOrder(), database err: ", err)
 		return err
 	}
 
+	txfcs := make([]logic.TxFunc, 0)
+	// finish order
+	txfcs = append(txfcs, s.FinishOrderTx(ctx, id))
+	// create bill
+	billService := NewBillService(s.svcctx)
+	billAddParam := &dto.BillAddParam{
+		Time: time.Now().UnixMilli(),
+		AdminId: orderDetailView.AdminId,
+		OrderId: orderDetailView.Id,
+		OrderType: orderDetailView.Type,
+	}
+	txfcs = append(txfcs, billService.AddTx(ctx, billAddParam))
+
+	bizErr, txErr := logic.Transaction(s.svcctx.DB, txfcs)
+	if bizErr != nil {
+		return bizErr
+	} else if txErr != nil {
+		return txErr
+	}
+
 	return nil
+}
+
+func (s *OrderService) FinishOrderTx(ctx *gin.Context, id string) logic.TxFunc {
+	return func(tx *gorm.DB) error {
+		err := s.svcctx.OrderModel.Conn(tx).FinishOrder(id)
+		if err != nil {
+			fmt.Println("OrderService.FinishOrder(), database err: ", err)
+			return err
+		}
+
+		return nil
+	}
+}
+
+func (s *OrderService) FindDetailAdminViewById(ctx *gin.Context, id string) (*dto.OrderDetailAdminView, error) {
+	orderDetail, err := s.svcctx.OrderModel.Conn(s.svcctx.DB).FindDetailById(id)
+	if err != nil {
+		return nil, nil
+	}
+
+	return s.CastToDetailAdminView(orderDetail), nil
 }
 
 func (s *OrderService) FindDetailAdminViewPageOrderByTime(ctx *gin.Context, desc bool, page *util.Page[*dto.OrderDetailAdminView]) error {

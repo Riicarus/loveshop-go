@@ -133,6 +133,7 @@ func (s *CommodityService) UpdateAmount(ctx *gin.Context, id string, number int)
 
 	err := s.svcctx.CommodityModel.Conn(s.svcctx.DB).UpdateAmount(id, number)
 	if err != nil {
+		fmt.Println("CommodityService.UpdateAmount(), database err: ", err)
 		return err
 	}
 
@@ -155,6 +156,7 @@ func (s *CommodityService) UpdateAmountTx(ctx *gin.Context, id string, number in
 	
 		err := s.svcctx.CommodityModel.Conn(tx).UpdateAmount(id, number)
 		if err != nil {
+			fmt.Println("CommodityService.UpdateAmountTx(), database err: ", err)
 			return err
 		}
 	
@@ -162,7 +164,7 @@ func (s *CommodityService) UpdateAmountTx(ctx *gin.Context, id string, number in
 		go func() {
 			err = connection.NewRedisConnection[string]().DoHashRemove(constant.REDIS_COMMODITY_HASH, constant.RedisCommodityHashKey(id))
 			if err != nil {
-				fmt.Println("CommodityService.UpdateAmount(), redis err: ", err)
+				fmt.Println("CommodityService.UpdateAmountTx(), redis err: ", err)
 			}
 		}()
 	
@@ -178,6 +180,7 @@ func (s *CommodityService) Delete(ctx *gin.Context, id string) error {
 
 	err := s.svcctx.CommodityModel.Conn(s.svcctx.DB).Delete(id)
 	if err != nil {
+		fmt.Println("CommodityService.Delete(), database err: ", err)
 		return err
 	}
 
@@ -200,6 +203,7 @@ func (s *CommodityService) Undelete(ctx *gin.Context, id string) error {
 
 	err := s.svcctx.CommodityModel.Conn(s.svcctx.DB).Undelete(id)
 	if err != nil {
+		fmt.Println("CommodityService.Undelete(), database err: ", err)
 		return err
 	}
 

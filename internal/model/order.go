@@ -42,6 +42,7 @@ type OrderModel interface {
 	FinishOrder(id string) error
 
 	FindById(id string) (*Order, error)
+	FindDetailById(id string) (*OrderDetail, error)
 
 	FindPageOrderByTime(desc bool, num, size int) ([]*OrderDetail, error)
 	FindPageByStatusOrderByTime(status string, desc bool, num, size int) ([]*OrderDetail, error)

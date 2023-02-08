@@ -17,7 +17,7 @@ func AdminLogin(svcctx *context.ServiceContext) gin.HandlerFunc {
 		var loginParam dto.AdminLoginParam
 		err1 := ctx.Bind(&loginParam)
 		if err1 != nil {
-			fmt.Println("handler-AdminLogin(), databind err: ", err1)
+			fmt.Println("handler AdminLogin(), databind err: ", err1)
 			ctx.JSON(http.StatusOK, resp.Fail[string](e.VALIDATE_FAILED_MSG, e.VALIDATE_FAILED_CODE))
 			return
 		}
@@ -52,7 +52,7 @@ func AdminRegister(svcctx *context.ServiceContext) gin.HandlerFunc {
 		var registerParam dto.AdminRegisterParam
 		err1 := ctx.Bind(&registerParam)
 		if err1 != nil {
-			fmt.Println("handler-AdminRegister(), databind err: ", err1)
+			fmt.Println("handler AdminRegister(), databind err: ", err1)
 			ctx.JSON(http.StatusOK, resp.Fail[string](e.VALIDATE_FAILED_MSG, e.VALIDATE_FAILED_CODE))
 			return
 		}

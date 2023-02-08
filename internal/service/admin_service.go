@@ -24,6 +24,16 @@ func NewAdminService(svcctx *context.ServiceContext) *AdminService {
 	}
 }
 
+func (s *AdminService) FindById(ctx *gin.Context, id string) (*model.Admin, error) {
+	admin, err := s.svcctx.AdminModel.Conn(s.svcctx.DB).FindById(id)
+	if err != nil {
+		fmt.Println("AdminService.FindById(), database err: ", err)
+		return nil, err
+	}
+
+	return admin, nil
+}
+
 func (s *AdminService) LoginWithPass(ctx *gin.Context, loginParam *dto.AdminLoginParam) (string, error) {
 	admin, err1 := s.svcctx.AdminModel.Conn(s.svcctx.DB).FindByStudentId(loginParam.StudentId)
 	if err1 != nil {

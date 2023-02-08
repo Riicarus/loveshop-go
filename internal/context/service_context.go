@@ -18,6 +18,7 @@ type ServiceContext struct {
 	UserModel      model.UserModel
 	CommodityModel model.CommodityModel
 	OrderModel     model.OrderModel
+	BillModel      model.BillModel
 }
 
 func NewServiceContext() *ServiceContext {
@@ -35,5 +36,6 @@ func NewServiceContext() *ServiceContext {
 		UserModel:      &model.DefaultUserModel{},
 		CommodityModel: &model.DefaultCommodityModel{},
 		OrderModel:     &model.DefaultOrderModel{},
+		BillModel:      &model.DefaultBillModel{},
 	}
 }
