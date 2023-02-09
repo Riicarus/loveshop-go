@@ -13,10 +13,10 @@ type RedisConnction[T interface{}] struct {
 	Client *redis.Client
 }
 
-var client *redis.Client
+var RedisClient *redis.Client
 
 func InitRedisConn() {
-	client = redis.NewClient(&redis.Options{
+	RedisClient = redis.NewClient(&redis.Options{
 		Addr:        conf.ServiceConf.Cache.Redis.Addr,
 		Password:    conf.ServiceConf.Cache.Redis.Password,
 		DB:          conf.ServiceConf.Cache.Redis.DB,
@@ -27,7 +27,7 @@ func InitRedisConn() {
 
 func NewRedisConnection[T interface{}]() *RedisConnction[T] {
 	return &RedisConnction[T]{
-		Client: client,
+		Client: RedisClient,
 	}
 }
 

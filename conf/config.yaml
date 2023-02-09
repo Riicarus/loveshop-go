@@ -14,6 +14,9 @@ Cache:
     PoolSize: 20
     DialTimeout: 500
 
+Kafka:
+  Addr: 124.222.158.8:9092
+
 Jwt:
   Issuer: Riicarus
   Expire: 3600

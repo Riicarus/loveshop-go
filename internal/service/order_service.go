@@ -11,6 +11,7 @@ import (
 	"github.com/riicarus/loveshop/internal/context"
 	"github.com/riicarus/loveshop/internal/entity/dto"
 	"github.com/riicarus/loveshop/internal/model"
+	"github.com/riicarus/loveshop/pkg/connection"
 	"github.com/riicarus/loveshop/pkg/e"
 	"github.com/riicarus/loveshop/pkg/logic"
 	"github.com/riicarus/loveshop/pkg/util"
@@ -89,14 +90,98 @@ func (s *OrderService) CastToDetailUserViewSlice(orderSlice []*model.Order) []*d
 	return viewSlice
 }
 
+// produce order msg to kafka
+func (s *OrderService) ProduceToKafka(ctx *gin.Context, param *dto.OrderAddParam) error {
+	if strings.TrimSpace(param.AdminId) == "" && strings.TrimSpace(param.UserId) == "" {
+		return e.VALIDATE_ERR
+	}
+	if len(param.Commodities) == 0 {
+		return e.VALIDATE_ERR
+	}
+	if param.Type != constant.ONLINE && param.Type != constant.OFFLINE {
+		return e.VALIDATE_ERR
+	}
+
+	if strings.TrimSpace(param.AdminId) == "" {
+		param.AdminId = constant.ONLINE
+	}
+	if strings.TrimSpace(param.UserId) == "" {
+		param.UserId = constant.OFFLINE
+	}
+
+	var payment float64
+	for _, c := range param.Commodities {
+		payment += c.Discount * c.Price * float64(c.Amount)
+	}
+
+	order := model.Order{
+		Id:          uuid.New().String(),
+		UserId:      param.UserId,
+		AdminId:     param.AdminId,
+		Time:        time.Now().UnixMilli(),
+		Commodities: param.Commodities,
+		Payment:     payment,
+		Status:      constant.ORDER_STATUS_CREATED,
+		Type:        param.Type,
+	}
+
+	// check commodity
+	commodityService := NewCommodityService(s.svcctx)
+	for _, c := range order.Commodities {
+		detailView, err2 := commodityService.FindDetailViewById(ctx, c.CommodityId)
+		if err2 != nil {
+			return err2
+		}
+
+		if detailView.Amount < c.Amount {
+			return e.STOCK_ERR
+		}
+	}
+
+	kafkaHandler := connection.NewKakfaHandler[model.Order](constant.KAFKA_ORDER_GROUP, constant.KAFKA_ORDER_TOPIC)
+	if err := kafkaHandler.Write(order.Id, order); err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	return nil
+}
+
+// consumer order msg from kafka
+// start when app start
+func (s *OrderService) ConsumerFromKafka(ctx *gin.Context) {
+	partitionConsume := func() {
+		kafkaHandler := connection.NewKakfaHandler[model.Order](constant.KAFKA_ORDER_GROUP, constant.KAFKA_ORDER_TOPIC)
+		for {
+			order, commit, err := kafkaHandler.Fetch()
+			if err != nil {
+				fmt.Println("OrderService.ConsumerFromKafka(), get order from kafka err: ", err)
+			}
+
+			if err := s.Add(ctx.Copy(), order); err != nil {
+				fmt.Println("OrderService.ConsumerFromKafka(), add order err: ", err)
+			}
+			if err := commit(); err != nil {
+				fmt.Println("OrderService.ConsumerFromKafka(), commit to kafka err: ", err)
+			}
+		}
+	}
+
+	go partitionConsume()
+	go partitionConsume()
+	go partitionConsume()
+
+	fmt.Println("kafka order consumer started")
+}
+
 // use transaction to protect
-func (s *OrderService) Add(ctx *gin.Context, param *dto.OrderAddParam) error {
+func (s *OrderService) Add(ctx *gin.Context, order *model.Order) error {
 	txfcs := make([]logic.TxFunc, 0)
 	// add order
-	txfcs = append(txfcs, s.AddTx(ctx, param))
+	txfcs = append(txfcs, s.AddTx(ctx, order))
 	// decrease stock
 	commodityService := NewCommodityService(s.svcctx)
-	for _, c := range param.Commodities {
+	for _, c := range order.Commodities {
 		txfcs = append(txfcs, commodityService.UpdateAmountTx(ctx, c.CommodityId, -c.Amount))
 	}
 
@@ -110,41 +195,8 @@ func (s *OrderService) Add(ctx *gin.Context, param *dto.OrderAddParam) error {
 	return nil
 }
 
-func (s *OrderService) AddTx(ctx *gin.Context, param *dto.OrderAddParam) logic.TxFunc {
+func (s *OrderService) AddTx(ctx *gin.Context, order *model.Order) logic.TxFunc {
 	return func(tx *gorm.DB) error {
-		if strings.TrimSpace(param.AdminId) == "" && strings.TrimSpace(param.UserId) == "" {
-			return e.VALIDATE_ERR
-		}
-		if len(param.Commodities) == 0 {
-			return e.VALIDATE_ERR
-		}
-		if param.Type != constant.ONLINE && param.Type != constant.OFFLINE {
-			return e.VALIDATE_ERR
-		}
-
-		if strings.TrimSpace(param.AdminId) == "" {
-			param.AdminId = constant.ONLINE
-		}
-		if strings.TrimSpace(param.UserId) == "" {
-			param.UserId = constant.OFFLINE
-		}
-
-		var payment float64
-		for _, c := range param.Commodities {
-			payment += c.Discount * c.Price * float64(c.Amount)
-		}
-
-		order := &model.Order{
-			Id:          uuid.New().String(),
-			UserId:      param.UserId,
-			AdminId:     param.AdminId,
-			Time:        time.Now().UnixMilli(),
-			Commodities: param.Commodities,
-			Payment:     payment,
-			Status:      constant.ORDER_STATUS_CREATED,
-			Type:        param.Type,
-		}
-
 		// may be slow, could use routine
 		commodityService := NewCommodityService(s.svcctx)
 		for _, c := range order.Commodities {

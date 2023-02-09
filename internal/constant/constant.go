@@ -8,7 +8,8 @@ const (
 
 // commodity
 const (
-	REDIS_COMMODITY_HASH = "commodity"
+	REDIS_COMMODITY_INFO_HASH  = "commodity-info"
+	REDIS_COMMODITY_STOCK_HASH = "commodity-stock"
 
 	BOOK_TYPE                = "BOOK"
 	CULTURAL_CREATIVITY_TYPE = "CULTURAL_CREATIVITY"
@@ -30,4 +31,12 @@ const (
 	ORDER_STATUS_CANCLED  = "CANCLED"
 	ORDER_STATUS_PAYED    = "PAYED"
 	ORDER_STATUS_FINISHED = "FINISHED"
+)
+
+// kafka
+const (
+	KAFKA_ORDER_TOPIC = "loveshop-order"
+	KAKFA_LOG_TOPIC   = "loveshop-log"
+
+	KAFKA_ORDER_GROUP = "loveshop-order-group"
 )

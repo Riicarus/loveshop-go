@@ -11,6 +11,8 @@ type ServiceConfig struct {
 
 	Cache Cache
 
+	Kafka Kafka
+
 	Jwt Jwt
 
 	Server Server
@@ -41,6 +43,10 @@ type Redis struct {
 	DB          int
 	PoolSize    int
 	DialTimeout int
+}
+
+type Kafka struct {
+	Addr string
 }
 
 type Server struct {
@@ -88,6 +94,9 @@ func InitConfig() {
 				PoolSize:    viper.GetInt("Cache.Redis.PoolSize"),
 				DialTimeout: viper.GetInt("Cache.Redis.DialTimeout"),
 			},
+		},
+		Kafka: Kafka{
+			Addr: viper.GetString("Kafka.Addr"),
 		},
 		Jwt: Jwt{
 			Issuer: viper.GetString("Jwt.Issuer"),

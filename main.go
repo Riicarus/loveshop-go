@@ -8,6 +8,7 @@ import (
 	"github.com/riicarus/loveshop/conf"
 	"github.com/riicarus/loveshop/internal/context"
 	"github.com/riicarus/loveshop/internal/route"
+	"github.com/riicarus/loveshop/internal/service"
 	"github.com/riicarus/loveshop/pkg/connection"
 )
 
@@ -20,6 +21,10 @@ func main() {
 
 	svctx := context.NewServiceContext()
 	route.RegisterHandlers(router, svctx)
+
+	// kafka consumer
+	orderService := service.NewOrderService(svctx)
+	orderService.ConsumerFromKafka(&gin.Context{})
 
 	err := http.ListenAndServe(fmt.Sprintf(":%d", conf.ServiceConf.Server.Port), router)
 	if err != nil {
