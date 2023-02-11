@@ -26,7 +26,6 @@ type CommodityModel interface {
 	Add(commoidty *Commodity) error
 
 	Update(commodity *Commodity) error
-	UpdateAmount(id string, number int) error
 	RefreshAmount(id string, number int) error
 
 	Delete(id string) error

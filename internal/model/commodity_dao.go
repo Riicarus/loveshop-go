@@ -2,7 +2,6 @@ package model
 
 import (
 	"github.com/riicarus/loveshop/internal/sql"
-	"github.com/riicarus/loveshop/pkg/e"
 	"github.com/riicarus/loveshop/pkg/logic"
 	"gorm.io/gorm"
 )
@@ -31,21 +30,6 @@ func (m *DefaultCommodityModel) Update(commodity *Commodity) error {
 	err := m.DB.Model(commodity).Updates(commodity).Error
 	if err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func (m *DefaultCommodityModel) UpdateAmount(id string, number int) error {
-	commodity := &Commodity{
-		Id: id,
-	}
-
-	db := m.DB.Model(commodity).Where("amount + ? >= 0", number).Update("amount", gorm.Expr("amount + ?", number))
-	if db.Error != nil {
-		return db.Error
-	} else if db.RowsAffected != 1 {
-		return e.STOCK_ERR
 	}
 
 	return nil
