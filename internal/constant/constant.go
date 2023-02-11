@@ -18,7 +18,11 @@ const (
 	BOARD_GAME_TYPE          = "BOARD_GAME"
 )
 
-func RedisCommodityHashKey(id string) string {
+func RedisCommodityInfoHashKey(id string) string {
+	return "commodity_" + id
+}
+
+func RedisCommodityStockHashKey(id string) string {
 	return "commodity_" + id
 }
 

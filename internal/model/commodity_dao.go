@@ -51,6 +51,14 @@ func (m *DefaultCommodityModel) UpdateAmount(id string, number int) error {
 	return nil
 }
 
+func (m *DefaultCommodityModel) RefreshAmount(id string, number int) error {
+	if err := m.DB.Model(&Commodity{Id: id}).Update("amount", number).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *DefaultCommodityModel) Delete(id string) error {
 	commodity := &Commodity{
 		Id: id,
@@ -93,6 +101,15 @@ func (m *DefaultCommodityModel) FindByIsbn(isbn string) (*Commodity, error) {
 	}
 
 	return commodity, nil
+}
+
+func (m *DefaultCommodityModel) FindAll() ([]*Commodity, error) {
+	commoditySlice := make([]*Commodity, 0)
+	if err := m.DB.Find(&commoditySlice).Error; err != nil {
+		return nil, err
+	}
+
+	return commoditySlice, nil
 }
 
 func (m *DefaultCommodityModel) FindPage(num, size int) ([]*Commodity, error) {

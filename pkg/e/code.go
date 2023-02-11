@@ -16,4 +16,6 @@ const (
 	INTERNAL_ERROR_CODE RespCode = 4
 
 	STOCK_NOT_ENOUGH_CODE = 5
+
+	NOT_EXIST_CODE = 6
 )

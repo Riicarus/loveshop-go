@@ -23,7 +23,7 @@ func OrderAdd(svcctx *context.ServiceContext) gin.HandlerFunc {
 		}
 
 		orderService := service.NewOrderService(svcctx)
-		err2 := orderService.ProduceToKafka(ctx, param)
+		err2 := orderService.Create(ctx, param)
 		switch err2 {
 		case e.STOCK_ERR:
 			ctx.JSON(http.StatusOK, resp.Fail[string](e.STOCK_ERR.Msg, e.STOCK_ERR.Code))

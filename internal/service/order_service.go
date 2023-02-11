@@ -1,12 +1,14 @@
 package service
 
 import (
+	c "context"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 	"github.com/riicarus/loveshop/internal/constant"
 	"github.com/riicarus/loveshop/internal/context"
 	"github.com/riicarus/loveshop/internal/entity/dto"
@@ -91,7 +93,59 @@ func (s *OrderService) CastToDetailUserViewSlice(orderSlice []*model.Order) []*d
 }
 
 // produce order msg to kafka
-func (s *OrderService) ProduceToKafka(ctx *gin.Context, param *dto.OrderAddParam) error {
+func (s *OrderService) ProduceToKafka(ctx *gin.Context, order *model.Order) error {
+	// check commodity
+	commodityService := NewCommodityService(s.svcctx)
+	for _, c := range order.Commodities {
+		detailView, err2 := commodityService.FindDetailViewById(ctx, c.CommodityId)
+		if err2 != nil {
+			return err2
+		}
+
+		if detailView.Amount < c.Amount {
+			return e.STOCK_ERR
+		}
+	}
+
+	kafkaHandler := connection.NewKakfaHandler[model.Order](constant.KAFKA_ORDER_GROUP, constant.KAFKA_ORDER_TOPIC)
+	if err := kafkaHandler.Write(order.Id, *order); err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	return nil
+}
+
+// consumer order msg from kafka
+// start when app start
+func (s *OrderService) ConsumeFromKafka(ctx *gin.Context) {
+	partitionConsume := func() {
+		kafkaHandler := connection.NewKakfaHandler[model.Order](constant.KAFKA_ORDER_GROUP, constant.KAFKA_ORDER_TOPIC)
+		for {
+			order, commit, err := kafkaHandler.Fetch()
+			if err != nil {
+				fmt.Println("OrderService.ConsumerFromKafka(), get order from kafka err: ", err)
+			}
+
+			if err := s.Add(ctx.Copy(), order); err != nil {
+				fmt.Println("OrderService.ConsumerFromKafka(), add order err: ", err)
+			}
+			if err := commit(); err != nil {
+				fmt.Println("OrderService.ConsumerFromKafka(), commit to kafka err: ", err)
+			}
+		}
+	}
+
+	go partitionConsume()
+	go partitionConsume()
+	go partitionConsume()
+
+	fmt.Println("kafka order consumer started")
+}
+
+// use LUA to ensure atomic redis operation
+// LUA{find stock -> update stock if enough} -> push order to kafka
+func (s *OrderService) Create(ctx *gin.Context, param *dto.OrderAddParam) error {
 	if strings.TrimSpace(param.AdminId) == "" && strings.TrimSpace(param.UserId) == "" {
 		return e.VALIDATE_ERR
 	}
@@ -125,99 +179,64 @@ func (s *OrderService) ProduceToKafka(ctx *gin.Context, param *dto.OrderAddParam
 		Type:        param.Type,
 	}
 
-	// check commodity
-	commodityService := NewCommodityService(s.svcctx)
-	for _, c := range order.Commodities {
-		detailView, err2 := commodityService.FindDetailViewById(ctx, c.CommodityId)
-		if err2 != nil {
-			return err2
-		}
+	// KEYS: commodity_id, ARGV: number]
+	desStock := redis.NewScript(`
+	for i, v in ipairs(KEYS) do
+	    local stock = redis.call("HGET", "commodity-stock", v)
 
-		if detailView.Amount < c.Amount {
-			return e.STOCK_ERR
-		}
+	    if stock ~= nil then
+	        if tonumber(stock) >= tonumber(ARGV[i]) then
+	            stock = tostring(tonumber(stock) - tonumber(ARGV[i]))
+	            redis.call("HSET", "commodity-stock", v,  stock)
+	        else
+	               return "not enough"
+	        end
+	    else
+	        return "not exist"
+	    end
+	end
+
+	return "success"`)
+
+	keys := make([]string, 0, len(order.Commodities))
+	values := make([]interface{}, 0, len(order.Commodities))
+	for _, c := range order.Commodities {
+		keys = append(keys, constant.RedisCommodityStockHashKey(c.CommodityId))
+		values = append(values, c.Amount)
 	}
 
-	kafkaHandler := connection.NewKakfaHandler[model.Order](constant.KAFKA_ORDER_GROUP, constant.KAFKA_ORDER_TOPIC)
-	if err := kafkaHandler.Write(order.Id, order); err != nil {
-		fmt.Println(err)
+	rctx := c.Background()
+	cmd := desStock.Run(rctx, connection.RedisClient, keys, values...)
+	if err := cmd.Err(); err != nil {
+		fmt.Println("OrderService.Create(), redis lua err: ", err)
+		return err
+	}
+
+	switch cmd.Val() {
+	case "success":
+	case "not enough":
+		return e.STOCK_ERR
+	case "not exist":
+		return e.NOT_EXIST_ERR
+	}
+
+	go func ()  {
+		if err := s.ProduceToKafka(ctx, &order); err != nil {
+			fmt.Printf("OrderService.Create(), kafka err: %v; Order info: %v", err, order)
+		}
+	}()
+
+	return nil
+}
+
+func (s *OrderService) Add(ctx *gin.Context, order *model.Order) error {
+	err := s.svcctx.OrderModel.Conn(s.svcctx.DB).Add(order)
+	if err != nil {
+		fmt.Println("OrderService.Add(), database err: ", err)
 		return err
 	}
 
 	return nil
-}
-
-// consumer order msg from kafka
-// start when app start
-func (s *OrderService) ConsumerFromKafka(ctx *gin.Context) {
-	partitionConsume := func() {
-		kafkaHandler := connection.NewKakfaHandler[model.Order](constant.KAFKA_ORDER_GROUP, constant.KAFKA_ORDER_TOPIC)
-		for {
-			order, commit, err := kafkaHandler.Fetch()
-			if err != nil {
-				fmt.Println("OrderService.ConsumerFromKafka(), get order from kafka err: ", err)
-			}
-
-			if err := s.Add(ctx.Copy(), order); err != nil {
-				fmt.Println("OrderService.ConsumerFromKafka(), add order err: ", err)
-			}
-			if err := commit(); err != nil {
-				fmt.Println("OrderService.ConsumerFromKafka(), commit to kafka err: ", err)
-			}
-		}
-	}
-
-	go partitionConsume()
-	go partitionConsume()
-	go partitionConsume()
-
-	fmt.Println("kafka order consumer started")
-}
-
-// use transaction to protect
-func (s *OrderService) Add(ctx *gin.Context, order *model.Order) error {
-	txfcs := make([]logic.TxFunc, 0)
-	// add order
-	txfcs = append(txfcs, s.AddTx(ctx, order))
-	// decrease stock
-	commodityService := NewCommodityService(s.svcctx)
-	for _, c := range order.Commodities {
-		txfcs = append(txfcs, commodityService.UpdateAmountTx(ctx, c.CommodityId, -c.Amount))
-	}
-
-	bizErr, txErr := logic.Transaction(s.svcctx.DB, txfcs)
-	if bizErr != nil {
-		return bizErr
-	} else if txErr != nil {
-		return txErr
-	}
-
-	return nil
-}
-
-func (s *OrderService) AddTx(ctx *gin.Context, order *model.Order) logic.TxFunc {
-	return func(tx *gorm.DB) error {
-		// may be slow, could use routine
-		commodityService := NewCommodityService(s.svcctx)
-		for _, c := range order.Commodities {
-			detailView, err2 := commodityService.FindDetailViewById(ctx, c.CommodityId)
-			if err2 != nil {
-				return err2
-			}
-
-			if detailView.Amount < c.Amount {
-				return e.STOCK_ERR
-			}
-		}
-
-		err := s.svcctx.OrderModel.Conn(tx).Add(order)
-		if err != nil {
-			fmt.Println("OrderService.Add(), database err: ", err)
-			return err
-		}
-
-		return nil
-	}
 }
 
 func (s *OrderService) CancleOrder(ctx *gin.Context, id string) error {

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/riicarus/loveshop/conf"
@@ -24,10 +25,25 @@ func main() {
 
 	// kafka consumer
 	orderService := service.NewOrderService(svctx)
-	orderService.ConsumerFromKafka(&gin.Context{})
+	orderService.ConsumeFromKafka(&gin.Context{})
 
-	err := http.ListenAndServe(fmt.Sprintf(":%d", conf.ServiceConf.Server.Port), router)
-	if err != nil {
+	// cache commodity to redis
+	commodityService := service.NewCommodityService(svctx)
+	if err := commodityService.CacheStock(&gin.Context{}); err != nil {
+		panic(err)
+	}
+
+	go func ()  {
+		for {
+			time.Sleep(10 * time.Second)
+
+			if err := commodityService.StoreStock(&gin.Context{}); err != nil {
+				fmt.Println("commodity stock store failed, err: ", err)
+			}
+		}
+	}()
+
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", conf.ServiceConf.Server.Port), router); err != nil {
 		panic(err)
 	}
 }

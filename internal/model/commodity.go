@@ -27,6 +27,7 @@ type CommodityModel interface {
 
 	Update(commodity *Commodity) error
 	UpdateAmount(id string, number int) error
+	RefreshAmount(id string, number int) error
 
 	Delete(id string) error
 	Undelete(id string) error
@@ -34,6 +35,7 @@ type CommodityModel interface {
 	FindById(id string) (*Commodity, error)
 	FindByIsbn(isbn string) (*Commodity, error)
 
+	FindAll() ([]*Commodity, error)
 	FindPage(num, size int) ([]*Commodity, error)
 	FindPageByType(t string, num, size int) ([]*Commodity, error)
 	FindPageByFuzzyName(name string, num, size int) ([]*Commodity, error)

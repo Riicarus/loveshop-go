@@ -103,6 +103,31 @@ func (c *RedisConnction[T]) DoHashGetAll(k string, temp T, all []T) error {
 	return nil
 }
 
+func (c *RedisConnction[T]) DoHashGetAllMap(k string, all map[string]T) error {
+	ctx, cancle := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
+	defer cancle()
+
+	cmder := c.Client.HGetAll(ctx, k)
+
+	if cmder.Err() == redis.Nil {
+		return nil
+	} else if cmder.Err() != nil {
+		return cmder.Err()
+	}
+
+	t := new(T)
+	for key, val := range cmder.Val() {
+		err := json.Unmarshal([]byte(val), t)
+		if err != nil {
+			return err
+		}
+
+		all[key] = *t
+	}
+
+	return nil
+}
+
 func (c *RedisConnction[T]) DoHashRemove(k string, hk ...string) error {
 	ctx, cancle := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
 	defer cancle()

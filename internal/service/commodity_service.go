@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	c "context"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/riicarus/loveshop/internal/constant"
 	"github.com/riicarus/loveshop/internal/context"
@@ -15,7 +16,6 @@ import (
 	"github.com/riicarus/loveshop/internal/model"
 	"github.com/riicarus/loveshop/pkg/connection"
 	"github.com/riicarus/loveshop/pkg/e"
-	"github.com/riicarus/loveshop/pkg/logic"
 	"github.com/riicarus/loveshop/pkg/util"
 )
 
@@ -93,6 +93,46 @@ func (s *CommodityService) Add(ctx *gin.Context, param *dto.CommodityAddParam) e
 	return nil
 }
 
+// cache
+func (s *CommodityService) CacheStock(ctx *gin.Context) error {
+	commoditySlice, err := s.svcctx.CommodityModel.Conn(s.svcctx.DB).FindAll()
+	if err != nil {
+		return err
+	}
+
+	stockRedisClient := connection.NewRedisConnection[int]()
+	commodityRedisClient := connection.NewRedisConnection[model.Commodity]()
+	for _, commodity := range commoditySlice {
+		if err := stockRedisClient.DoHashSet(constant.REDIS_COMMODITY_STOCK_HASH, constant.RedisCommodityStockHashKey(commodity.Id), commodity.Amount, 0); err != nil {
+			panic("commodity stock cache failed, please check your data")
+		}
+		if err := commodityRedisClient.DoHashSet(constant.REDIS_COMMODITY_INFO_HASH, constant.RedisCommodityInfoHashKey(commodity.Id), *commodity, 0); err != nil {
+			panic("commodity cache failed, please check your data")
+		}
+	}
+
+	fmt.Println("Cached commodity and stock to redis")
+
+	return nil
+}
+
+// store stock to database with a fixed time
+func (s *CommodityService) StoreStock(ctx *gin.Context) error {
+	redisClient := connection.NewRedisConnection[int]()
+
+	allStock := make(map[string]int)
+	redisClient.DoHashGetAllMap(constant.REDIS_COMMODITY_STOCK_HASH, allStock)
+
+	for key, val := range allStock {
+		id := strings.Split(key, "_")[1]
+		if err := s.svcctx.CommodityModel.Conn(s.svcctx.DB).RefreshAmount(id, val); err != nil {
+			fmt.Println("commodity stock store failed, please check your data")
+		}
+	}
+
+	return nil
+}
+
 // status change remove cache from redis
 func (s *CommodityService) Update(ctx *gin.Context, param *dto.CommodityUpdateParam) error {
 	if strings.TrimSpace(param.Id) == "" {
@@ -116,7 +156,7 @@ func (s *CommodityService) Update(ctx *gin.Context, param *dto.CommodityUpdatePa
 
 	// use another routine to remove cache
 	go func() {
-		err = connection.NewRedisConnection[string]().DoHashRemove(constant.REDIS_COMMODITY_INFO_HASH, constant.RedisCommodityHashKey(param.Id))
+		err = connection.NewRedisConnection[string]().DoHashRemove(constant.REDIS_COMMODITY_INFO_HASH, constant.RedisCommodityInfoHashKey(param.Id))
 		if err != nil {
 			fmt.Println("CommodityService.Update(), redis err: ", err)
 		}
@@ -125,51 +165,38 @@ func (s *CommodityService) Update(ctx *gin.Context, param *dto.CommodityUpdatePa
 	return nil
 }
 
-// status change remove cache from redis
-func (s *CommodityService) UpdateAmount(ctx *gin.Context, id string, number int) error {
-	if strings.TrimSpace(id) == "" {
-		return e.VALIDATE_ERR
-	}
+// update stock to redis
+// use LUA to update stock, newStock = stock + number
+func (s *CommodityService) UpdateStock(ctx *gin.Context, id string, number int) error {
+	updateStock := redis.NewScript(`
+	local stock = redis.call("HGET", "commodity-stock", KEYS[1])
 
-	err := s.svcctx.CommodityModel.Conn(s.svcctx.DB).UpdateAmount(id, number)
-	if err != nil {
-		fmt.Println("CommodityService.UpdateAmount(), database err: ", err)
+	if stock ~= nil then
+		stock = tostring(tonumber(stock) + tonumber(ARGV[1]))
+		redis.call("HSET", "commodity-stock", KEYS[1],  stock)
+	else
+		return "not exist"
+	end
+
+	return "success"
+	`)
+
+	rctx := c.Background()
+	keys := []string{constant.RedisCommodityStockHashKey(id)}
+	values := []interface{}{number}
+	cmd := updateStock.Run(rctx, connection.RedisClient, keys, values...)
+
+	if err := cmd.Err(); err != nil {
 		return err
 	}
 
-	// use another routine to remove cache
-	go func() {
-		err = connection.NewRedisConnection[string]().DoHashRemove(constant.REDIS_COMMODITY_INFO_HASH, constant.RedisCommodityHashKey(id))
-		if err != nil {
-			fmt.Println("CommodityService.UpdateAmount(), redis err: ", err)
-		}
-	}()
-
-	return err
-}
-
-func (s *CommodityService) UpdateAmountTx(ctx *gin.Context, id string, number int) logic.TxFunc {
-	return func(tx *gorm.DB) error {
-		if strings.TrimSpace(id) == "" {
-			return e.VALIDATE_ERR
-		}
-
-		err := s.svcctx.CommodityModel.Conn(tx).UpdateAmount(id, number)
-		if err != nil {
-			fmt.Println("CommodityService.UpdateAmountTx(), database err: ", err)
-			return err
-		}
-
-		// use another routine to remove cache
-		go func() {
-			err = connection.NewRedisConnection[string]().DoHashRemove(constant.REDIS_COMMODITY_INFO_HASH, constant.RedisCommodityHashKey(id))
-			if err != nil {
-				fmt.Println("CommodityService.UpdateAmountTx(), redis err: ", err)
-			}
-		}()
-
-		return err
+	switch cmd.Val() {
+	case "success":
+	case "not exist":
+		return e.NOT_EXIST_ERR
 	}
+
+	return nil
 }
 
 // status change remove cache from redis
@@ -186,7 +213,7 @@ func (s *CommodityService) Delete(ctx *gin.Context, id string) error {
 
 	// use another routine to remove cache
 	go func() {
-		err = connection.NewRedisConnection[string]().DoHashRemove(constant.REDIS_COMMODITY_INFO_HASH, constant.RedisCommodityHashKey(id))
+		err = connection.NewRedisConnection[string]().DoHashRemove(constant.REDIS_COMMODITY_INFO_HASH, constant.RedisCommodityInfoHashKey(id))
 		if err != nil {
 			fmt.Println("CommodityService.Delete(), redis err: ", err)
 		}
@@ -209,7 +236,7 @@ func (s *CommodityService) Undelete(ctx *gin.Context, id string) error {
 
 	// use another routine to remove cache
 	go func() {
-		err = connection.NewRedisConnection[string]().DoHashRemove(constant.REDIS_COMMODITY_INFO_HASH, constant.RedisCommodityHashKey(id))
+		err = connection.NewRedisConnection[string]().DoHashRemove(constant.REDIS_COMMODITY_INFO_HASH, constant.RedisCommodityInfoHashKey(id))
 		if err != nil {
 			fmt.Println("CommodityService.Undelete(), redis err: ", err)
 		}
@@ -223,7 +250,7 @@ func (s *CommodityService) FindDetailViewById(ctx *gin.Context, id string) (*dto
 	var err error
 
 	// read from redis
-	err = connection.NewRedisConnection[*model.Commodity]().DoHashGet(constant.REDIS_COMMODITY_INFO_HASH, constant.RedisCommodityHashKey(id), commodity)
+	err = connection.NewRedisConnection[*model.Commodity]().DoHashGet(constant.REDIS_COMMODITY_INFO_HASH, constant.RedisCommodityInfoHashKey(id), commodity)
 	if err != nil {
 		fmt.Println("CommodityService.FindDetailById(), redis err: ", err)
 		return nil, err
@@ -244,7 +271,7 @@ func (s *CommodityService) FindDetailViewById(ctx *gin.Context, id string) (*dto
 
 		// cache to redis use another routine
 		go func() {
-			err = connection.NewRedisConnection[*model.Commodity]().DoHashSet(constant.REDIS_COMMODITY_INFO_HASH, constant.RedisCommodityHashKey(id), commodity, 0)
+			err = connection.NewRedisConnection[*model.Commodity]().DoHashSet(constant.REDIS_COMMODITY_INFO_HASH, constant.RedisCommodityInfoHashKey(id), commodity, 0)
 			if err != nil {
 				fmt.Println("CommodityService.FindDetailById(), redis err: ", err)
 			}
@@ -287,7 +314,7 @@ func (s *CommodityService) FindDetailViewByIsbn(ctx *gin.Context, isbn string) (
 
 		// cache to redis use another routine
 		go func() {
-			err = connection.NewRedisConnection[*model.Commodity]().DoHashSet(constant.REDIS_COMMODITY_INFO_HASH, constant.RedisCommodityHashKey(commodity.Id), commodity, 0)
+			err = connection.NewRedisConnection[*model.Commodity]().DoHashSet(constant.REDIS_COMMODITY_INFO_HASH, constant.RedisCommodityInfoHashKey(commodity.Id), commodity, 0)
 			if err != nil {
 				fmt.Println("CommodityService.FindDetailByIsbn(), redis err: ", err)
 			}

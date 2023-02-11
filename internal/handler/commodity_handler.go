@@ -64,7 +64,7 @@ func CommodityUpdateAmount(svcctx *context.ServiceContext) gin.HandlerFunc {
 		}
 
 		commodityService := service.NewCommodityService(svcctx)
-		err1 := commodityService.UpdateAmount(ctx, id, number)
+		err1 := commodityService.UpdateStock(ctx, id, number)
 		if err1 != nil {
 			ctx.JSON(http.StatusOK, resp.Fail[string](e.INTERNAL_ERROR_MSG, e.INTERNAL_ERROR_CODE))
 		} else {
