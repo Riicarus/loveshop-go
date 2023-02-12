@@ -12,6 +12,14 @@ type AdminLoginParam struct {
 	Password  string `json:"password" binding:"required"`
 }
 
+type AdminLoginView struct {
+	Id        string `json:"id"`
+	Name      string `json:"name"`
+	StudentId string `json:"studentId"`
+	Type      string `json:"type"`
+	Token     string `json:"token"`
+}
+
 type AdminRegisterParam struct {
 	Name      string               `json:"name" binding:"required"`
 	StudentId string               `json:"studentId" binding:"required"`

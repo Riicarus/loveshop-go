@@ -45,7 +45,7 @@ type BillDetailAdminView struct {
 	Adminname      string                `json:"adminname"`
 }
 
-type BillAnalyzeInfo struct {
+type BillAnalyzeView struct {
 	Day                    float64    `json:"day"`
 	Week                   float64    `json:"week"`
 	Month                  float64    `json:"month"`

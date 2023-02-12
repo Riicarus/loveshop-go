@@ -23,13 +23,13 @@ func AdminLogin(svcctx *context.ServiceContext) gin.HandlerFunc {
 		}
 
 		adminService := service.NewAdminService(svcctx)
-		token, err2 := adminService.LoginWithPass(ctx, &loginParam)
+		loginView, err2 := adminService.LoginWithPass(ctx, &loginParam)
 		if err2 == e.UNAUTHED_ERR {
 			ctx.JSON(http.StatusOK, resp.Fail[string](e.UNAUTHED_ERR.Msg, e.UNAUTHED_ERR.Code))
 		} else if err2 != nil {
 			ctx.JSON(http.StatusInternalServerError, resp.Fail[string](e.UNATHENRIZED_MSG, e.UNATHENRIZED_CODE))
 		} else {
-			ctx.JSON(http.StatusOK, resp.OK(token))
+			ctx.JSON(http.StatusOK, resp.OK(loginView))
 		}
 	}
 }

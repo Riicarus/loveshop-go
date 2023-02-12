@@ -216,8 +216,8 @@ func (s *BillService) FindDetailAdminViewPageByOrderTypeOrderByTime(ctx *gin.Con
 	return nil
 }
 
-func (s *BillService) Analyze(ctx *gin.Context) (*dto.BillAnalyzeInfo, error) {
-	analyzeInfo := &dto.BillAnalyzeInfo{}
+func (s *BillService) Analyze(ctx *gin.Context) (*dto.BillAnalyzeView, error) {
+	analyzeInfo := &dto.BillAnalyzeView{}
 
 	billSlice, err := s.svcctx.BillModel.Conn(s.svcctx.DB).FindAll()
 	if err != nil {

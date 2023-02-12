@@ -34,21 +34,21 @@ func (s *AdminService) FindById(ctx *gin.Context, id string) (*model.Admin, erro
 	return admin, nil
 }
 
-func (s *AdminService) LoginWithPass(ctx *gin.Context, loginParam *dto.AdminLoginParam) (string, error) {
+func (s *AdminService) LoginWithPass(ctx *gin.Context, loginParam *dto.AdminLoginParam) (*dto.AdminLoginView, error) {
 	admin, err1 := s.svcctx.AdminModel.Conn(s.svcctx.DB).FindByStudentId(loginParam.StudentId)
 	if err1 != nil {
 		fmt.Println("AdminService.LoginWithPass(), db err: ", err1)
-		return "", err1
+		return nil, err1
 	}
 
 	// no such admin
 	if admin == nil {
-		return "", e.UNAUTHED_ERR
+		return nil, e.UNAUTHED_ERR
 	}
 
 	// not enabled admin
 	if !admin.Enabled {
-		return "", e.UNAUTHED_ERR
+		return nil, e.UNAUTHED_ERR
 	}
 
 	md5Pass := util.Md5(loginParam.Password, admin.Salt, 1024)
@@ -56,14 +56,20 @@ func (s *AdminService) LoginWithPass(ctx *gin.Context, loginParam *dto.AdminLogi
 		token, err2 := util.GenToken(admin.StudentId, consts.ADMIN_LOGIN_TYPE)
 		if err2 != nil {
 			fmt.Println("AdminService.LoginWithPass(), encoding jwt err: ", err2)
-			return "", err2
+			return nil, err2
 		}
 
-		return token, nil
+		return &dto.AdminLoginView{
+			Id: admin.Id,
+			Name: admin.Name,
+			StudentId: admin.StudentId,
+			Type: consts.ADMIN_LOGIN_TYPE,
+			Token: token,
+		}, nil
 	}
 
 	// password not match
-	return "", e.UNAUTHED_ERR
+	return nil, e.UNAUTHED_ERR
 }
 
 func (s *AdminService) Unable(ctx *gin.Context, id string) error {
