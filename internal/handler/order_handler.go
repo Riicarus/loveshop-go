@@ -20,6 +20,14 @@ func OrderAdd(svcctx *context.ServiceContext) gin.HandlerFunc {
 		err := ctx.Bind(param)
 		if err != nil {
 			fmt.Println("handler OrderAdd(), binding err: ", err)
+			ctx.JSON(http.StatusOK, resp.Fail[string](e.VALIDATE_ERR.Msg, e.VALIDATE_ERR.Code))
+			return
+		}
+
+		if err := param.Check(); err != nil {
+			fmt.Println("handler OrderAdd(), validate err: ", err)
+			ctx.JSON(http.StatusOK, resp.Fail[string](e.VALIDATE_ERR.Msg, e.VALIDATE_ERR.Code))
+			return
 		}
 
 		orderService := service.NewOrderService(svcctx)

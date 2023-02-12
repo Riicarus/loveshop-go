@@ -57,6 +57,12 @@ func AdminRegister(svcctx *context.ServiceContext) gin.HandlerFunc {
 			return
 		}
 
+		if err := registerParam.Check(); err != nil {
+			fmt.Println("handler AdminRegister(), validate err: ", err1)
+			ctx.JSON(http.StatusOK, resp.Fail[string](e.VALIDATE_FAILED_MSG, e.VALIDATE_FAILED_CODE))
+			return
+		}
+
 		adminService := service.NewAdminService(svcctx)
 		err2 := adminService.Register(ctx, &registerParam)
 		if err2 != nil {

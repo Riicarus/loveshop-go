@@ -24,6 +24,12 @@ func CommodityAdd(svcctx *context.ServiceContext) gin.HandlerFunc {
 			return
 		}
 
+		if err := addParam.Check(); err != nil {
+			fmt.Println("handler CommodityAdd(), validate err: ", err)
+			ctx.JSON(http.StatusOK, resp.Fail[string](e.VALIDATE_ERR.Msg, e.VALIDATE_ERR.Code))
+			return
+		}
+
 		commodityService := service.NewCommodityService(svcctx)
 		err2 := commodityService.Add(ctx, addParam)
 		if err2 != nil {
@@ -40,6 +46,12 @@ func CommodityUpdate(svcctx *context.ServiceContext) gin.HandlerFunc {
 		err := ctx.Bind(updateParam)
 		if err != nil {
 			fmt.Println("handler CommodityUpdate(), databind err: ", err)
+			ctx.JSON(http.StatusOK, resp.Fail[string](e.VALIDATE_ERR.Msg, e.VALIDATE_ERR.Code))
+			return
+		}
+
+		if err := updateParam.Check(); err != nil {
+			fmt.Println("handler CommodityUpdate(), validate err: ", err)
 			ctx.JSON(http.StatusOK, resp.Fail[string](e.VALIDATE_ERR.Msg, e.VALIDATE_ERR.Code))
 			return
 		}

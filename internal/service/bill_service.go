@@ -3,7 +3,6 @@ package service
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -12,7 +11,6 @@ import (
 	"github.com/riicarus/loveshop/internal/context"
 	"github.com/riicarus/loveshop/internal/entity/dto"
 	"github.com/riicarus/loveshop/internal/model"
-	"github.com/riicarus/loveshop/pkg/e"
 	"github.com/riicarus/loveshop/pkg/logic"
 	"github.com/riicarus/loveshop/pkg/util"
 	"gorm.io/gorm"
@@ -49,10 +47,6 @@ func (s *BillService) CastToDetailAdminViewSlice(billSlice []*model.Bill, adminS
 }
 
 func (s *BillService) Add(ctx *gin.Context, param *dto.BillAddParam) error {
-	if strings.TrimSpace(param.AdminId) == "" || strings.TrimSpace(param.OrderId) == "" {
-		return e.VALIDATE_ERR
-	}
-
 	bill := &model.Bill{
 		Id:        uuid.New().String(),
 		Time:      time.Now().UnixMilli(),
@@ -70,10 +64,6 @@ func (s *BillService) Add(ctx *gin.Context, param *dto.BillAddParam) error {
 
 func (s *BillService) AddTx(ctx *gin.Context, param *dto.BillAddParam) logic.TxFunc {
 	return func(tx *gorm.DB) error {
-		if strings.TrimSpace(param.AdminId) == "" || strings.TrimSpace(param.OrderId) == "" {
-			return e.VALIDATE_ERR
-		}
-
 		bill := &model.Bill{
 			Id:        uuid.New().String(),
 			Time:      time.Now().UnixMilli(),

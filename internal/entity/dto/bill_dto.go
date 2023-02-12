@@ -1,10 +1,40 @@
 package dto
 
+import (
+	"strings"
+
+	"github.com/riicarus/loveshop/internal/consts"
+	"github.com/riicarus/loveshop/pkg/e"
+)
+
 type BillAddParam struct {
 	Time      int64  `json:"time"`
 	OrderId   string `json:"orderId"`
 	AdminId   string `json:"adminId"`
 	OrderType string `json:"orderType"`
+}
+
+func (b *BillAddParam) Check() error {
+	if b.Time <= 0 {
+		return e.VALIDATE_ERR
+	}
+
+	if strings.TrimSpace(b.OrderId) == "" {
+		return e.VALIDATE_ERR
+	}
+
+	if strings.TrimSpace(b.AdminId) == "" {
+		return e.VALIDATE_ERR
+	}
+
+	switch b.OrderType {
+	case consts.OFFLINE:
+	case consts.ONLINE:
+	default:
+		return e.VALIDATE_ERR
+	}
+
+	return nil
 }
 
 type BillDetailAdminView struct {
