@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/riicarus/loveshop/internal/constant"
+	"github.com/riicarus/loveshop/internal/consts"
 	"github.com/riicarus/loveshop/internal/sql"
 	"github.com/riicarus/loveshop/pkg/logic"
 	"gorm.io/gorm"
@@ -18,7 +18,7 @@ func (m *DefaultOrderModel) Conn(db *gorm.DB) OrderModel {
 }
 
 func (m *DefaultOrderModel) Add(order *Order) error {
-	err := m.DB.Debug().Create(order).Error
+	err := m.DB.Create(order).Error
 	if err != nil {
 		return err
 	}
@@ -30,7 +30,7 @@ func (m *DefaultOrderModel) CancleOrder(id string) error {
 	order := &Order{
 		Id: id,
 	}
-	err := m.DB.Model(order).Where("status IN('CREATED', 'PAYED')").Update("status", constant.ORDER_STATUS_CANCLED).Error
+	err := m.DB.Model(order).Where("status IN('CREATED', 'PAYED')").Update("status", consts.ORDER_STATUS_CANCLED).Error
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func (m *DefaultOrderModel) PayOrder(id string) error {
 	order := &Order{
 		Id: id,
 	}
-	err := m.DB.Model(order).Where("status = 'CREATED'").Update("status", constant.ORDER_STATUS_PAYED).Error
+	err := m.DB.Model(order).Where("status = 'CREATED'").Update("status", consts.ORDER_STATUS_PAYED).Error
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (m *DefaultOrderModel) FinishOrder(id string) error {
 	order := &Order{
 		Id: id,
 	}
-	err := m.DB.Model(order).Where("status = 'PAYED'").Update("status", constant.ORDER_STATUS_FINISHED).Error
+	err := m.DB.Model(order).Where("status = 'PAYED'").Update("status", consts.ORDER_STATUS_FINISHED).Error
 	if err != nil {
 		return err
 	}

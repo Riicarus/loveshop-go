@@ -78,8 +78,17 @@ func (c *RedisConnction[T]) DoHashGet(k, hk string, v T) error {
 	return nil
 }
 
+func (c *RedisConnction[T]) DoHashMGet(k string, hks []string) ([]interface{}, error) {
+	ctx, cancle := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
+	defer cancle()
+
+	cmder := c.Client.HMGet(ctx, k, hks...)
+
+	return cmder.Val(), cmder.Err()
+}
+
 // temp should be a value of a struct, not a pointer
-func (c *RedisConnction[T]) DoHashGetAll(k string, temp T, all []T) error {
+func (c *RedisConnction[T]) DoHashGetAll(k string, all []T) error {
 	ctx, cancle := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
 	defer cancle()
 
@@ -91,13 +100,14 @@ func (c *RedisConnction[T]) DoHashGetAll(k string, temp T, all []T) error {
 		return cmder.Err()
 	}
 
+	t := new(T)
 	for _, val := range cmder.Val() {
-		err := json.Unmarshal([]byte(val), &temp)
+		err := json.Unmarshal([]byte(val), t)
 		if err != nil {
 			return err
 		}
 
-		all = append(all, temp)
+		all = append(all, *t)
 	}
 
 	return nil

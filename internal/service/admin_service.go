@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/riicarus/loveshop/internal/constant"
+	"github.com/riicarus/loveshop/internal/consts"
 	"github.com/riicarus/loveshop/internal/context"
 	"github.com/riicarus/loveshop/internal/entity/dto"
 	"github.com/riicarus/loveshop/internal/model"
@@ -53,7 +53,7 @@ func (s *AdminService) LoginWithPass(ctx *gin.Context, loginParam *dto.AdminLogi
 
 	md5Pass := util.Md5(loginParam.Password, admin.Salt, 1024)
 	if md5Pass == admin.Password {
-		token, err2 := util.GenToken(admin.StudentId, constant.ADMIN_LOGIN_TYPE)
+		token, err2 := util.GenToken(admin.StudentId, consts.ADMIN_LOGIN_TYPE)
 		if err2 != nil {
 			fmt.Println("AdminService.LoginWithPass(), encoding jwt err: ", err2)
 			return "", err2

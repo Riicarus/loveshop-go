@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
-	"github.com/riicarus/loveshop/internal/constant"
+	"github.com/riicarus/loveshop/internal/consts"
 	"github.com/riicarus/loveshop/internal/context"
 	"github.com/riicarus/loveshop/internal/entity/dto"
 	"github.com/riicarus/loveshop/internal/model"
@@ -107,7 +107,7 @@ func (s *OrderService) ProduceToKafka(ctx *gin.Context, order *model.Order) erro
 		}
 	}
 
-	kafkaHandler := connection.NewKakfaHandler[model.Order](constant.KAFKA_ORDER_GROUP, constant.KAFKA_ORDER_TOPIC)
+	kafkaHandler := connection.NewKakfaHandler[model.Order](consts.KAFKA_ORDER_GROUP, consts.KAFKA_ORDER_TOPIC)
 	if err := kafkaHandler.Write(order.Id, *order); err != nil {
 		fmt.Println(err)
 		return err
@@ -120,7 +120,7 @@ func (s *OrderService) ProduceToKafka(ctx *gin.Context, order *model.Order) erro
 // start when app start
 func (s *OrderService) ConsumeFromKafka(ctx *gin.Context) {
 	partitionConsume := func() {
-		kafkaHandler := connection.NewKakfaHandler[model.Order](constant.KAFKA_ORDER_GROUP, constant.KAFKA_ORDER_TOPIC)
+		kafkaHandler := connection.NewKakfaHandler[model.Order](consts.KAFKA_ORDER_GROUP, consts.KAFKA_ORDER_TOPIC)
 		for {
 			order, commit, err := kafkaHandler.Fetch()
 			if err != nil {
@@ -152,15 +152,15 @@ func (s *OrderService) Create(ctx *gin.Context, param *dto.OrderAddParam) error 
 	if len(param.Commodities) == 0 {
 		return e.VALIDATE_ERR
 	}
-	if param.Type != constant.ONLINE && param.Type != constant.OFFLINE {
+	if param.Type != consts.ONLINE && param.Type != consts.OFFLINE {
 		return e.VALIDATE_ERR
 	}
 
 	if strings.TrimSpace(param.AdminId) == "" {
-		param.AdminId = constant.ONLINE
+		param.AdminId = consts.ONLINE
 	}
 	if strings.TrimSpace(param.UserId) == "" {
-		param.UserId = constant.OFFLINE
+		param.UserId = consts.OFFLINE
 	}
 
 	var payment float64
@@ -175,7 +175,7 @@ func (s *OrderService) Create(ctx *gin.Context, param *dto.OrderAddParam) error 
 		Time:        time.Now().UnixMilli(),
 		Commodities: param.Commodities,
 		Payment:     payment,
-		Status:      constant.ORDER_STATUS_CREATED,
+		Status:      consts.ORDER_STATUS_CREATED,
 		Type:        param.Type,
 	}
 
@@ -201,7 +201,7 @@ func (s *OrderService) Create(ctx *gin.Context, param *dto.OrderAddParam) error 
 	keys := make([]string, 0, len(order.Commodities))
 	values := make([]interface{}, 0, len(order.Commodities))
 	for _, c := range order.Commodities {
-		keys = append(keys, constant.RedisCommodityStockHashKey(c.CommodityId))
+		keys = append(keys, consts.RedisCommodityStockHashKey(c.CommodityId))
 		values = append(values, c.Amount)
 	}
 
@@ -220,7 +220,7 @@ func (s *OrderService) Create(ctx *gin.Context, param *dto.OrderAddParam) error 
 		return e.NOT_EXIST_ERR
 	}
 
-	go func ()  {
+	go func() {
 		if err := s.ProduceToKafka(ctx, &order); err != nil {
 			fmt.Printf("OrderService.Create(), kafka err: %v; Order info: %v", err, order)
 		}

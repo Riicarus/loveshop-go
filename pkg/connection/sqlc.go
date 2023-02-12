@@ -6,13 +6,12 @@ import (
 	"github.com/riicarus/loveshop/conf"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 func NewSqlConn() (*gorm.DB, error) {
 	conn, err := gorm.Open(mysql.Open(conf.ServiceConf.Gorm.Mysql.Dsn), &gorm.Config{
 		//SkipDefaultTransaction: true,
-		Logger:                 logger.Default.LogMode(logger.Info),
+		//Logger:                 logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
 		return nil, err

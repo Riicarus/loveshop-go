@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/riicarus/loveshop/internal/constant"
+	"github.com/riicarus/loveshop/internal/consts"
 	"github.com/riicarus/loveshop/internal/context"
 	"github.com/riicarus/loveshop/internal/entity/dto"
 	"github.com/riicarus/loveshop/internal/model"
@@ -269,7 +269,6 @@ func (s *BillService) Analyze(ctx *gin.Context) (*dto.BillAnalyzeInfo, error) {
 			analyzeInfo.Month += billDetail.OrderView.Payment
 		}
 
-
 		// TODO optimize: save type info in CommodityInOrder struct to avoid unneccessary search
 		for _, commodityInOrder := range billDetail.OrderView.Commodities {
 			commodity, err2 := commodityService.FindDetailViewById(ctx, commodityInOrder.CommodityId)
@@ -279,16 +278,16 @@ func (s *BillService) Analyze(ctx *gin.Context) (*dto.BillAnalyzeInfo, error) {
 			}
 
 			switch commodity.Type {
-			case constant.BOOK_TYPE:
+			case consts.BOOK_TYPE:
 				analyzeInfo.Book += commodityInOrder.Discount * commodityInOrder.Price * float64(commodityInOrder.Amount)
-			case constant.CULTURAL_CREATIVITY_TYPE:
+			case consts.CULTURAL_CREATIVITY_TYPE:
 				analyzeInfo.CulturalCreativity += commodityInOrder.Discount * commodityInOrder.Price * float64(commodityInOrder.Amount)
 				ccMap[commodity.Name] += commodityInOrder.Amount
-			case constant.DAILY_NECESSITY_TYPE:
+			case consts.DAILY_NECESSITY_TYPE:
 				analyzeInfo.DailyNecessity += commodityInOrder.Discount * commodityInOrder.Price * float64(commodityInOrder.Amount)
-			case constant.SPORTS_GOODS_TYPE:
+			case consts.SPORTS_GOODS_TYPE:
 				analyzeInfo.SportsGoods += commodityInOrder.Discount * commodityInOrder.Price * float64(commodityInOrder.Amount)
-			case constant.BOARD_GAME_TYPE:
+			case consts.BOARD_GAME_TYPE:
 				analyzeInfo.BoardGame += commodityInOrder.Discount * commodityInOrder.Price * float64(commodityInOrder.Amount)
 			}
 		}
