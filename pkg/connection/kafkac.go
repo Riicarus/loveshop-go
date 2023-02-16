@@ -10,21 +10,21 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-type KafkaHanler[T interface{}] struct {
+type KafkaHandler[T interface{}] struct {
 	Addr          string
 	ConsumerGroup string
 	Topic         string
 }
 
-func NewKakfaHandler[T interface{}](groupId string, topic string) *KafkaHanler[T] {
-	return &KafkaHanler[T]{
+func NewKafkaHandler[T interface{}](groupId string, topic string) *KafkaHandler[T] {
+	return &KafkaHandler[T]{
 		Addr:          conf.ServiceConf.Kafka.Addr,
 		ConsumerGroup: groupId,
 		Topic:         topic,
 	}
 }
 
-func (h *KafkaHanler[T]) Write(key string, msg T) error {
+func (h *KafkaHandler[T]) Write(key string, msg T) error {
 	w := &kafka.Writer{
 		Addr:     kafka.TCP(h.Addr),
 		Topic:    h.Topic,
@@ -38,7 +38,7 @@ func (h *KafkaHanler[T]) Write(key string, msg T) error {
 
 	m := kafka.Message{
 		Value: msgBytes,
-		Key: []byte(key),
+		Key:   []byte(key),
 	}
 	if err := w.WriteMessages(context.Background(), m); err != nil {
 		return err
@@ -51,7 +51,7 @@ func (h *KafkaHanler[T]) Write(key string, msg T) error {
 	return nil
 }
 
-func (h *KafkaHanler[T]) Fetch() (*T, func() error, error) {
+func (h *KafkaHandler[T]) Fetch() (*T, func() error, error) {
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:        []string{h.Addr},
 		GroupID:        h.ConsumerGroup,
@@ -87,7 +87,7 @@ func (h *KafkaHanler[T]) Fetch() (*T, func() error, error) {
 	return t, commit, nil
 }
 
-func (h *KafkaHanler[T]) Read(msgChan chan T) {
+func (h *KafkaHandler[T]) Read(msgChan chan T) {
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:        []string{h.Addr},
 		GroupID:        h.ConsumerGroup,

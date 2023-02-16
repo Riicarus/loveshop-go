@@ -37,7 +37,7 @@ type OrderModel interface {
 	logic.IDBModel[OrderModel]
 
 	Add(order *Order) error
-	CancleOrder(id string) error
+	CancelOrder(id string) error
 	PayOrder(id string) error
 	FinishOrder(id string) error
 

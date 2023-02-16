@@ -107,7 +107,7 @@ func (s *OrderService) ProduceToKafka(ctx *gin.Context, order *model.Order) erro
 		}
 	}
 
-	kafkaHandler := connection.NewKakfaHandler[model.Order](consts.KAFKA_ORDER_GROUP, consts.KAFKA_ORDER_TOPIC)
+	kafkaHandler := connection.NewKafkaHandler[model.Order](consts.KAFKA_ORDER_GROUP, consts.KAFKA_ORDER_TOPIC)
 	if err := kafkaHandler.Write(order.Id, *order); err != nil {
 		fmt.Println(err)
 		return err
@@ -120,7 +120,7 @@ func (s *OrderService) ProduceToKafka(ctx *gin.Context, order *model.Order) erro
 // start when app start
 func (s *OrderService) ConsumeFromKafka(ctx *gin.Context) {
 	partitionConsume := func() {
-		kafkaHandler := connection.NewKakfaHandler[model.Order](consts.KAFKA_ORDER_GROUP, consts.KAFKA_ORDER_TOPIC)
+		kafkaHandler := connection.NewKafkaHandler[model.Order](consts.KAFKA_ORDER_GROUP, consts.KAFKA_ORDER_TOPIC)
 		for {
 			order, commit, err := kafkaHandler.Fetch()
 			if err != nil {
@@ -239,10 +239,10 @@ func (s *OrderService) Add(ctx *gin.Context, order *model.Order) error {
 	return nil
 }
 
-func (s *OrderService) CancleOrder(ctx *gin.Context, id string) error {
-	err := s.svcctx.OrderModel.Conn(s.svcctx.DB).CancleOrder(id)
+func (s *OrderService) CancelOrder(ctx *gin.Context, id string) error {
+	err := s.svcctx.OrderModel.Conn(s.svcctx.DB).CancelOrder(id)
 	if err != nil {
-		fmt.Println("OrderService.CancleOrder(), database err: ", err)
+		fmt.Println("OrderService.CancelOrder(), database err: ", err)
 		return err
 	}
 

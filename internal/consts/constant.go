@@ -32,7 +32,7 @@ const (
 	OFFLINE = "OFFLINE"
 
 	ORDER_STATUS_CREATED  = "CREATED"
-	ORDER_STATUS_CANCLED  = "CANCLED"
+	ORDER_STATUS_CANCELED = "CANCELED"
 	ORDER_STATUS_PAYED    = "PAYED"
 	ORDER_STATUS_FINISHED = "FINISHED"
 )
@@ -40,7 +40,7 @@ const (
 // kafka
 const (
 	KAFKA_ORDER_TOPIC = "loveshop-order"
-	KAKFA_LOG_TOPIC   = "loveshop-log"
+	KAFKA_LOG_TOPIC   = "loveshop-log"
 
 	KAFKA_ORDER_GROUP = "loveshop-order-group"
 )
@@ -48,5 +48,5 @@ const (
 // regexp
 const (
 	POSITION_REG = "^0[0-9]-[AB]-0[0-9]$"
-	ISBN_REG = "^(?:ISBN(?:-1[03])?:? )?(?=[0-9X]{10}$|(?=(?:[0-9]+[- ]){3})[- 0-9X]{13}$|97[89][0-9]{10}$|(?=(?:[0-9]+[- ]){4})[- 0-9]{17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9X]$"
+	ISBN_REG     = "^(?:ISBN(?:-1[03])?:? )?(?=[0-9X]{10}$|(?=(?:[0-9]+[- ]){3})[- 0-9X]{13}$|97[89][0-9]{10}$|(?=(?:[0-9]+[- ]){4})[- 0-9]{17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9X]$"
 )

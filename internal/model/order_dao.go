@@ -26,11 +26,11 @@ func (m *DefaultOrderModel) Add(order *Order) error {
 	return nil
 }
 
-func (m *DefaultOrderModel) CancleOrder(id string) error {
+func (m *DefaultOrderModel) CancelOrder(id string) error {
 	order := &Order{
 		Id: id,
 	}
-	err := m.DB.Model(order).Where("status IN('CREATED', 'PAYED')").Update("status", consts.ORDER_STATUS_CANCLED).Error
+	err := m.DB.Model(order).Where("status IN('CREATED', 'PAYED')").Update("status", consts.ORDER_STATUS_CANCELED).Error
 	if err != nil {
 		return err
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/riicarus/loveshop/conf"
 )
 
-type RedisConnction[T interface{}] struct {
+type RedisConnection[T interface{}] struct {
 	Client *redis.Client
 }
 
@@ -25,29 +25,29 @@ func InitRedisConn() {
 	})
 }
 
-func NewRedisConnection[T interface{}]() *RedisConnction[T] {
-	return &RedisConnction[T]{
+func NewRedisConnection[T interface{}]() *RedisConnection[T] {
+	return &RedisConnection[T]{
 		Client: RedisClient,
 	}
 }
 
-func (c *RedisConnction[T]) DoSimpleSet(key string, value T, expire int) error {
-	ctx, cancle := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
-	defer cancle()
+func (c *RedisConnection[T]) DoSimpleSet(key string, value T, expire int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
+	defer cancel()
 
 	return c.Client.Set(ctx, key, value, time.Duration(expire)).Err()
 }
 
-func (c *RedisConnction[T]) DoSimpleGet(key string) (string, error) {
-	ctx, cancle := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
-	defer cancle()
+func (c *RedisConnection[T]) DoSimpleGet(key string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
+	defer cancel()
 
 	return c.Client.Get(ctx, key).Result()
 }
 
-func (c *RedisConnction[T]) DoHashSet(k, hk string, value T, expire int) error {
-	ctx, cancle := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
-	defer cancle()
+func (c *RedisConnection[T]) DoHashSet(k, hk string, value T, expire int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
+	defer cancel()
 
 	byteValue, err := json.Marshal(value)
 	if err != nil {
@@ -58,9 +58,9 @@ func (c *RedisConnction[T]) DoHashSet(k, hk string, value T, expire int) error {
 }
 
 // return err only when receiving non-redis.Nil err
-func (c *RedisConnction[T]) DoHashGet(k, hk string, v T) error {
-	ctx, cancle := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
-	defer cancle()
+func (c *RedisConnection[T]) DoHashGet(k, hk string, v T) error {
+	ctx, cancel := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
+	defer cancel()
 
 	cmder := c.Client.HGet(ctx, k, hk)
 
@@ -78,9 +78,9 @@ func (c *RedisConnction[T]) DoHashGet(k, hk string, v T) error {
 	return nil
 }
 
-func (c *RedisConnction[T]) DoHashMGet(k string, hks []string) ([]interface{}, error) {
-	ctx, cancle := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
-	defer cancle()
+func (c *RedisConnection[T]) DoHashMGet(k string, hks []string) ([]interface{}, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
+	defer cancel()
 
 	cmder := c.Client.HMGet(ctx, k, hks...)
 
@@ -88,9 +88,9 @@ func (c *RedisConnction[T]) DoHashMGet(k string, hks []string) ([]interface{}, e
 }
 
 // temp should be a value of a struct, not a pointer
-func (c *RedisConnction[T]) DoHashGetAll(k string, all []T) error {
-	ctx, cancle := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
-	defer cancle()
+func (c *RedisConnection[T]) DoHashGetAll(k string, all []T) error {
+	ctx, cancel := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
+	defer cancel()
 
 	cmder := c.Client.HGetAll(ctx, k)
 
@@ -113,9 +113,9 @@ func (c *RedisConnction[T]) DoHashGetAll(k string, all []T) error {
 	return nil
 }
 
-func (c *RedisConnction[T]) DoHashGetAllMap(k string, all map[string]T) error {
-	ctx, cancle := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
-	defer cancle()
+func (c *RedisConnection[T]) DoHashGetAllMap(k string, all map[string]T) error {
+	ctx, cancel := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
+	defer cancel()
 
 	cmder := c.Client.HGetAll(ctx, k)
 
@@ -138,9 +138,9 @@ func (c *RedisConnction[T]) DoHashGetAllMap(k string, all map[string]T) error {
 	return nil
 }
 
-func (c *RedisConnction[T]) DoHashRemove(k string, hk ...string) error {
-	ctx, cancle := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
-	defer cancle()
+func (c *RedisConnection[T]) DoHashRemove(k string, hk ...string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
+	defer cancel()
 
 	cmder := c.Client.HDel(ctx, k, hk...)
 
@@ -151,9 +151,9 @@ func (c *RedisConnction[T]) DoHashRemove(k string, hk ...string) error {
 	return nil
 }
 
-func (c *RedisConnction[T]) DoAny(args []interface{}) (interface{}, error) {
-	ctx, cancle := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
-	defer cancle()
+func (c *RedisConnection[T]) DoAny(args []interface{}) (interface{}, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), c.Client.Options().DialTimeout)
+	defer cancel()
 
 	return c.Client.Do(ctx, args...).Result()
 }

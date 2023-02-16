@@ -26,7 +26,7 @@ func RegisterHandlers(router *gin.Engine, svcctx *context.ServiceContext) {
 
 		commodityGroupV1.GET("/view/detail/:id", handler.CommodityFindDetailViewById(svcctx))
 		commodityGroupV1.GET("/view/detail/isbn/:isbn", handler.CommodityFindDetailViewByIsbn(svcctx))
-		
+
 		commodityGroupV1.GET("/view/simple/:num/:size", handler.CommodityFindSimpleViewPage(svcctx))
 		commodityGroupV1.GET("/view/simple/type/:type/:num/:size", handler.CommodityFindSimpleViewPageByType(svcctx))
 		commodityGroupV1.GET("/view/simple/name/:name/:num/:size", handler.CommodityFindSimpleViewPageByFuzzyName(svcctx))
@@ -37,7 +37,7 @@ func RegisterHandlers(router *gin.Engine, svcctx *context.ServiceContext) {
 	{
 		orderGroupV1.POST("", handler.OrderAdd(svcctx))
 
-		orderGroupV1.PUT("/cancle/:id", handler.OrderCancle(svcctx))
+		orderGroupV1.PUT("/cancel/:id", handler.OrderCancel(svcctx))
 		orderGroupV1.PUT("/pay/:id", handler.OrderPay(svcctx))
 		orderGroupV1.PUT("/finish/:id", handler.OrderFinish(svcctx))
 
